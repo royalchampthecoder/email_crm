@@ -1,0 +1,18 @@
+[
+  {
+    "title":"Frontend Hiring",
+    "company":"Google",
+    "position":"Frontend Developer",
+    "subject":"Interview Invitation",
+    "body":"Dear Candidate,\n\nWe would like to invite you for interview.\n\nRegards,\nHR Team",
+    "date":"24-05-2026 10:00 PM"
+  },
+  {
+    "title":"Backend Hiring",
+    "company":"Microsoft",
+    "position":"PHP Developer",
+    "subject":"Job Opportunity",
+    "body":"Dear Candidate,\n\nYour profile shortlisted.\n\nRegards,\nHR Team",
+    "date":"24-05-2026 10:10 PM"
+  }
+]
