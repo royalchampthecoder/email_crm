@@ -4,11 +4,13 @@ fetch('send_popup.php')
 .then(res=>res.text())
 .then(html=>{
 
+if(document.getElementById('sendModal')){
+document.getElementById('sendModal').remove();
+}
+
 document.body.insertAdjacentHTML('beforeend',html);
 
 loadCompanies();
-
-document.getElementById('sendModal').style.display='flex';
 
 });
 
@@ -16,7 +18,11 @@ document.getElementById('sendModal').style.display='flex';
 
 function closeSendPopup(){
 
-document.getElementById('sendModal').remove();
+let modal = document.getElementById('sendModal');
+
+if(modal){
+modal.remove();
+}
 
 }
 
@@ -28,9 +34,11 @@ fetch('api/get_templates.php')
 
 let companies = [...new Set(data.map(t=>t.company))];
 
-let select = document.getElementById('sendCompany');
+let select =
+document.getElementById('sendCompany');
 
-select.innerHTML = '';
+select.innerHTML =
+'<option value="">Select Company</option>';
 
 companies.forEach(company=>{
 
@@ -41,8 +49,6 @@ ${company}
 `;
 
 });
-
-loadPositions();
 
 });
 
@@ -63,7 +69,8 @@ data.filter(t=>t.company==company);
 let select =
 document.getElementById('sendPosition');
 
-select.innerHTML='';
+select.innerHTML =
+'<option value="">Select Position</option>';
 
 filtered.forEach(t=>{
 
@@ -81,9 +88,8 @@ ${t.position}
 
 function sendEmail(){
 
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
+let to =
+document.getElementById('toEmail').value;
 
 let company =
 document.getElementById('sendCompany').value;
@@ -91,14 +97,29 @@ document.getElementById('sendCompany').value;
 let position =
 document.getElementById('sendPosition').value;
 
+if(to=='' || company=='' || position==''){
+
+alert('Please fill all fields');
+return;
+
+}
+
+fetch('api/get_templates.php')
+.then(res=>res.json())
+.then(data=>{
+
 let template =
 data.find(t=>
 t.company==company &&
 t.position==position
 );
 
-let to =
-document.getElementById('toEmail').value;
+if(!template){
+
+alert('Template not found');
+return;
+
+}
 
 let saveData = new FormData();
 
@@ -109,8 +130,10 @@ saveData.append('position',position);
 saveData.append('subject',template.subject);
 
 fetch('api/save_sent_email.php',{
+
 method:'POST',
 body:saveData
+
 })
 .then(()=>{
 

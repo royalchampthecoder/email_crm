@@ -1,0 +1,975 @@
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\delete_template.php =====
+<?php
+
+$file = '../data/templates.json';
+
+$data = json_decode(file_get_contents($file), true);
+
+unset($data[$_POST['index']]);
+
+$data = array_values($data);
+
+file_put_contents($file,
+json_encode($data, JSON_PRETTY_PRINT));
+
+echo "deleted";
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\get_sent_emails.php =====
+<?php
+
+echo file_get_contents('../data/sent_emails.json');
+
+?>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\get_templates.php =====
+<?php
+
+echo file_get_contents('../data/templates.json');
+
+?>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\save_sent_email.php =====
+<?php
+
+$file = '../data/sent_emails.json';
+
+$data = json_decode(file_get_contents($file), true);
+
+$data[] = [
+
+"to_email" => $_POST['to_email'],
+"title" => $_POST['title'],
+"company" => $_POST['company'],
+"position" => $_POST['position'],
+"subject" => $_POST['subject'],
+"status" => "Sent",
+"date" => date('d-m-Y h:i A')
+
+];
+
+file_put_contents($file,
+json_encode($data, JSON_PRETTY_PRINT));
+
+echo "saved";
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\save_template.php =====
+<?php
+
+$file = '../data/templates.json';
+
+$data = json_decode(file_get_contents($file), true);
+
+$template = [
+
+"title" => $_POST['title'],
+"company" => $_POST['company'],
+"position" => $_POST['position'],
+"subject" => $_POST['subject'],
+"body" => $_POST['body'],
+"date" => date('d-m-Y h:i A')
+
+];
+
+if($_POST['index'] !== ''){
+
+$data[$_POST['index']] = $template;
+
+}else{
+
+$data[] = $template;
+
+}
+
+file_put_contents($file,
+json_encode($data, JSON_PRETTY_PRINT));
+
+echo "saved";
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\css\style.css =====
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+background:#f4f7fb;
+}
+
+.main-layout{
+display:flex;
+min-height:100vh;
+}
+
+.sidebar{
+width:250px;
+background:#111827;
+padding:20px;
+color:white;
+}
+
+.logo{
+margin-bottom:40px;
+}
+
+.menu{
+list-style:none;
+}
+
+.menu li{
+margin-bottom:15px;
+}
+
+.menu a{
+color:white;
+text-decoration:none;
+display:block;
+padding:12px;
+border-radius:10px;
+transition:0.3s;
+}
+
+.menu a:hover,
+.menu a.active{
+background:#2563eb;
+}
+
+.content{
+flex:1;
+padding:20px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
+}
+
+.btn{
+padding:12px 20px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+}
+
+.primary-btn{
+background:#2563eb;
+color:white;
+}
+
+.stats-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+margin-bottom:30px;
+}
+
+.stat-card{
+background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.charts-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+margin-bottom:30px;
+}
+
+.chart-card{
+background:white;
+padding:20px;
+border-radius:15px;
+}
+
+.search-box{
+margin-bottom:20px;
+}
+
+.search-box input,
+.filters input,
+.filters select,
+.modal-content input,
+.modal-content textarea,
+.modal-content select{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:10px;
+}
+
+.cards-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:20px;
+}
+
+.email-card{
+background:white;
+padding:20px;
+border-radius:15px;
+box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.card-actions{
+display:flex;
+gap:10px;
+margin-top:15px;
+}
+
+.icon-btn{
+background:#eee;
+padding:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100vw;
+height:100vh;
+background:rgba(0,0,0,0.3);
+align-items:center;
+justify-content:center;
+z-index:2000;
+}
+.modal.show {
+	display: flex;
+}
+
+.modal-content{
+background:white;
+padding:36px 32px;
+border-radius:12px;
+min-width:350px;
+max-width:95vw;
+position:relative;
+box-shadow:0 4px 24px rgba(37,99,235,0.13);
+}
+
+.close{
+position:absolute;
+top:10px;
+right:18px;
+font-size:1.5rem;
+color:#888;
+cursor:pointer;
+}
+
+.filters{
+display:grid;
+grid-template-columns:2fr 1fr 1fr;
+gap:15px;
+margin-bottom:20px;
+}
+
+@media(max-width:768px){
+
+.sidebar{
+width:80px;
+}
+
+.sidebar .logo h2,
+.sidebar .menu a{
+font-size:12px;
+}
+
+.charts-grid{
+grid-template-columns:1fr;
+}
+
+.filters{
+grid-template-columns:1fr;
+}
+
+}
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\footer.php =====
+  </div> <!-- end main-layout -->
+</body>
+</html>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\header.php =====
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Email CRM Dashboard</title>
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="main-layout">
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\sidebar.php =====
+<div class="sidebar">
+	<div class="logo">
+		<h2>Email CRM</h2>
+	</div>
+	<ul class="menu">
+		<li><a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF'])=='dashboard.php'?'active':'' ?>"><i class="fa fa-chart-bar"></i> Dashboard</a></li>
+		<li><a href="templates.php" class="<?= basename($_SERVER['PHP_SELF'])=='templates.php'?'active':'' ?>"><i class="fa fa-file-alt"></i> Templates</a></li>
+		<li><a href="sent_emails.php" class="<?= basename($_SERVER['PHP_SELF'])=='sent_emails.php'?'active':'' ?>"><i class="fa fa-paper-plane"></i> Sent Emails</a></li>
+	</ul>
+</div>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\topbar.php =====
+<div class="topbar">
+    <h2><?php echo $pageTitle; ?></h2>
+    <div class="topbar-actions">
+        <button class="btn primary-btn" onclick="openSendPopup()">
+            <i class="fa fa-envelope"></i> Send Email
+        </button>
+    </div>
+</div>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\dashboard.js =====
+let emails = [];
+
+fetch('api/get_sent_emails.php')
+.then(res => res.json())
+.then(data => {
+
+emails = data;
+
+renderStats();
+renderRecent(data);
+renderCharts(data);
+
+});
+
+function renderStats(){
+
+document.getElementById('totalEmails').innerText = emails.length;
+
+let companies = [...new Set(emails.map(e=>e.company))];
+document.getElementById('totalCompanies').innerText = companies.length;
+
+let positions = [...new Set(emails.map(e=>e.position))];
+document.getElementById('totalPositions').innerText = positions.length;
+
+document.getElementById('todayEmails').innerText = emails.length;
+
+}
+
+function renderRecent(data){
+
+let html='';
+
+data.slice(0,10).forEach(email=>{
+
+html += `
+<div class="email-card">
+
+<h3>${email.company}</h3>
+
+<p>${email.title}</p>
+<p>${email.position}</p>
+<p>${email.to_email}</p>
+<p>${email.status}</p>
+<p>${email.date}</p>
+
+</div>
+`;
+
+});
+
+document.getElementById('recentEmails').innerHTML = html;
+
+}
+
+function renderCharts(data){
+
+let companyCounts = {};
+
+data.forEach(e=>{
+companyCounts[e.company] =
+(companyCounts[e.company] || 0)+1;
+});
+
+new Chart(document.getElementById('companyChart'),{
+type:'bar',
+data:{
+labels:Object.keys(companyCounts),
+datasets:[{
+label:'Emails',
+data:Object.values(companyCounts)
+}]
+}
+});
+
+}
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\send.js =====
+function openSendPopup(){
+
+fetch('send_popup.php')
+.then(res=>res.text())
+.then(html=>{
+
+document.body.insertAdjacentHTML('beforeend',html);
+
+loadCompanies();
+
+document.getElementById('sendModal').style.display='flex';
+
+});
+
+}
+
+function closeSendPopup(){
+
+document.getElementById('sendModal').remove();
+
+}
+
+function loadCompanies(){
+
+fetch('api/get_templates.php')
+.then(res=>res.json())
+.then(data=>{
+
+let companies = [...new Set(data.map(t=>t.company))];
+
+let select = document.getElementById('sendCompany');
+
+select.innerHTML = '';
+
+companies.forEach(company=>{
+
+select.innerHTML += `
+<option value="${company}">
+${company}
+</option>
+`;
+
+});
+
+loadPositions();
+
+});
+
+}
+
+function loadPositions(){
+
+fetch('api/get_templates.php')
+.then(res=>res.json())
+.then(data=>{
+
+let company =
+document.getElementById('sendCompany').value;
+
+let filtered =
+data.filter(t=>t.company==company);
+
+let select =
+document.getElementById('sendPosition');
+
+select.innerHTML='';
+
+filtered.forEach(t=>{
+
+select.innerHTML += `
+<option value="${t.position}">
+${t.position}
+</option>
+`;
+
+});
+
+});
+
+}
+
+function sendEmail(){
+
+fetch('api/get_templates.php')
+.then(res=>res.json())
+.then(data=>{
+
+let company =
+document.getElementById('sendCompany').value;
+
+let position =
+document.getElementById('sendPosition').value;
+
+let template =
+data.find(t=>
+t.company==company &&
+t.position==position
+);
+
+let to =
+document.getElementById('toEmail').value;
+
+let saveData = new FormData();
+
+saveData.append('to_email',to);
+saveData.append('company',company);
+saveData.append('title',template.title);
+saveData.append('position',position);
+saveData.append('subject',template.subject);
+
+fetch('api/save_sent_email.php',{
+method:'POST',
+body:saveData
+})
+.then(()=>{
+
+let url =
+`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(template.subject)}&body=${encodeURIComponent(template.body)}`;
+
+window.open(url,'_blank');
+
+closeSendPopup();
+
+});
+
+});
+
+}
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\sent_emails.js =====
+fetch('api/get_sent_emails.php')
+.then(res=>res.json())
+.then(data=>{
+
+renderEmails(data);
+
+});
+
+function renderEmails(data){
+
+let html='';
+
+data.forEach(email=>{
+
+html += `
+<div class="email-card">
+
+<h3>${email.company}</h3>
+
+<p>${email.title}</p>
+<p>${email.position}</p>
+<p>${email.to_email}</p>
+<p>${email.subject}</p>
+<p>${email.status}</p>
+<p>${email.date}</p>
+
+</div>
+`;
+
+});
+
+document.getElementById('sentEmailsContainer').innerHTML=html;
+
+}
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\templates.js =====
+let templates = [];
+
+function loadTemplates(){
+
+fetch('api/get_templates.php')
+.then(res=>res.json())
+.then(data=>{
+
+templates = data;
+
+renderTemplates();
+
+});
+
+}
+
+function renderTemplates(){
+
+let html='';
+
+templates.forEach((t,index)=>{
+
+html += `
+<div class="email-card">
+
+<h3>${t.title}</h3>
+
+<p>${t.company}</p>
+<p>${t.position}</p>
+<p>${t.date}</p>
+
+<div class="card-actions">
+
+<button class="icon-btn"
+onclick="editTemplate(${index})">
+<i class="fa fa-edit"></i>
+</button>
+
+<button class="icon-btn"
+onclick="deleteTemplate(${index})">
+<i class="fa fa-trash"></i>
+</button>
+
+</div>
+
+</div>
+`;
+
+});
+
+document.getElementById('templatesContainer').innerHTML = html;
+
+}
+
+function openTemplateModal(){
+
+document.getElementById('templateModal').style.display='flex';
+
+}
+
+function closeTemplateModal(){
+
+document.getElementById('templateModal').style.display='none';
+
+}
+
+function editTemplate(index){
+
+let t = templates[index];
+
+openTemplateModal();
+
+document.getElementById('templateIndex').value=index;
+document.getElementById('title').value=t.title;
+document.getElementById('company').value=t.company;
+document.getElementById('position').value=t.position;
+document.getElementById('subject').value=t.subject;
+document.getElementById('body').value=t.body;
+
+}
+
+function saveTemplate(){
+
+let formData = new FormData();
+
+formData.append('index',
+document.getElementById('templateIndex').value);
+
+formData.append('title',
+document.getElementById('title').value);
+
+formData.append('company',
+document.getElementById('company').value);
+
+formData.append('position',
+document.getElementById('position').value);
+
+formData.append('subject',
+document.getElementById('subject').value);
+
+formData.append('body',
+document.getElementById('body').value);
+
+fetch('api/save_template.php',{
+method:'POST',
+body:formData
+})
+.then(res=>res.text())
+.then(()=>{
+
+closeTemplateModal();
+loadTemplates();
+
+});
+
+}
+
+function deleteTemplate(index){
+
+let formData = new FormData();
+
+formData.append('index',index);
+
+fetch('api/delete_template.php',{
+method:'POST',
+body:formData
+})
+.then(()=>loadTemplates());
+
+}
+
+loadTemplates();
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\dashboard.php =====
+<?php
+$pageTitle = "Dashboard";
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
+
+<div class="content">
+
+<?php include 'includes/topbar.php'; ?>
+
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <h3 id="totalEmails">0</h3>
+        <p>Total Emails Sent</p>
+    </div>
+
+    <div class="stat-card">
+        <h3 id="totalCompanies">0</h3>
+        <p>Total Companies</p>
+    </div>
+
+    <div class="stat-card">
+        <h3 id="totalPositions">0</h3>
+        <p>Total Positions</p>
+    </div>
+
+    <div class="stat-card">
+        <h3 id="todayEmails">0</h3>
+        <p>Today's Emails</p>
+    </div>
+
+</div>
+
+<div class="charts-grid">
+
+    <div class="chart-card">
+        <canvas id="companyChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+        <canvas id="dayChart"></canvas>
+    </div>
+
+</div>
+
+<div class="search-box">
+    <input type="text" id="searchInput"
+    placeholder="Search company, title, position, email">
+</div>
+
+<div id="recentEmails" class="cards-grid"></div>
+
+</div>
+
+<script src="js/dashboard.js"></script>
+
+<?php include 'includes/footer.php'; ?>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\send_popup.php =====
+<div class="popup" id="sendPopup">
+
+    <div class="popup-content send-popup">
+
+        <div class="popup-header">
+
+            <div>
+                <h2>Send Email</h2>
+                <p>Select company and position</p>
+            </div>
+
+            <span class="close-popup"
+            onclick="closeSendPopup()">
+                &times;
+            </span>
+
+        </div>
+
+        <div class="popup-body">
+
+            <div class="form-group">
+
+                <label>To Email</label>
+
+                <input
+                type="email"
+                id="toEmail"
+                placeholder="Enter candidate email">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Select Company</label>
+
+                <select
+                id="companySelect"
+                onchange="loadPositions()">
+
+                    <option value="">
+                        Select Company
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Select Position</label>
+
+                <select
+                id="positionSelect"
+                onchange="loadTemplate()">
+
+                    <option value="">
+                        Select Position
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="template-preview">
+
+                <h3>Email Preview</h3>
+
+                <div class="preview-box">
+<div class="modal" id="sendPopup">
+    <div class="modal-content send-popup">
+        <div class="popup-header">
+            <div>
+                <h2>Send Email</h2>
+                <p>Select company and position</p>
+            </div>
+            <span class="close" onclick="closeSendPopup()">&times;</span>
+        </div>
+        <div class="popup-body">
+            <div class="form-group">
+                <label>To Email</label>
+                <input type="email" id="toEmail" placeholder="Enter candidate email">
+            </div>
+            <div class="form-group">
+                <label>Select Company</label>
+                <select id="companySelect" onchange="loadPositions()">
+                    <option value="">Select Company</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Select Position</label>
+                <select id="positionSelect" onchange="loadTemplate()">
+                    <option value="">Select Position</option>
+                </select>
+            </div>
+            <div class="template-preview">
+                <h3>Email Preview</h3>
+                <div class="preview-box">
+                    <p><strong>Subject:</strong> <span id="previewSubject">No template selected</span></p>
+                    <div id="previewBody">Email body preview will appear here...</div>
+                </div>
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button class="secondary-btn" onclick="closeSendPopup()">Cancel</button>
+            <button class="primary-btn" onclick="sendEmail()"><i class="fa fa-paper-plane"></i> Send Email</button>
+        </div>
+    </div>
+</div>
+<script>
+function openSendPopup() {
+    document.getElementById('sendPopup').classList.add('show');
+}
+function closeSendPopup() {
+    document.getElementById('sendPopup').classList.remove('show');
+}
+</script>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\sent_emails.php =====
+<?php
+$pageTitle = "Sent Emails";
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
+
+<div class="content">
+
+<?php include 'includes/topbar.php'; ?>
+
+<div class="filters">
+
+<input type="text" id="emailSearch"
+placeholder="Search company, position, title">
+
+<select id="companyFilter"></select>
+
+<select id="statusFilter">
+<option value="">All Status</option>
+<option value="Sent">Sent</option>
+</select>
+
+</div>
+
+<div id="sentEmailsContainer" class="cards-grid"></div>
+
+</div>
+
+<script src="js/sent_emails.js"></script>
+
+<?php include 'includes/footer.php'; ?>
+
+===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\templates.php =====
+<?php
+$pageTitle = "Templates";
+include 'includes/header.php';
+include 'includes/sidebar.php';
+?>
+
+<div class="content">
+
+<?php include 'includes/topbar.php'; ?>
+
+<div class="template-top-actions">
+
+<button class="btn primary-btn" onclick="openTemplateModal()">
+    <i class="fa fa-plus"></i>
+    Add Template
+</button>
+
+</div>
+
+<div id="templatesContainer" class="cards-grid"></div>
+
+</div>
+
+
+<div class="modal" id="templateModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeTemplateModal()">&times;</span>
+        <h2>Template</h2>
+        <input type="hidden" id="templateIndex">
+        <input type="text" id="title" placeholder="Title">
+        <input type="text" id="company" placeholder="Company">
+        <input type="text" id="position" placeholder="Position">
+        <input type="text" id="subject" placeholder="Subject">
+        <textarea id="body" rows="10" placeholder="Email Body"></textarea>
+        <button class="btn primary-btn" onclick="saveTemplate()">Save Template</button>
+    </div>
+</div>
+
+<script>
+function openTemplateModal() {
+    document.getElementById('templateModal').classList.add('show');
+}
+function closeTemplateModal() {
+    document.getElementById('templateModal').classList.remove('show');
+}
+</script>
+
+<script src="js/templates.js"></script>
+
+<?php include 'includes/footer.php'; ?>
+
