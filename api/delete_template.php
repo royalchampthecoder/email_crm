@@ -4,6 +4,10 @@ $file = '../data/templates.json';
 
 $data = json_decode(file_get_contents($file), true);
 
+if(!$data){
+$data = [];
+}
+
 unset($data[$_POST['index']]);
 
 $data = array_values($data);

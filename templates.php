@@ -31,7 +31,13 @@ include 'includes/sidebar.php';
         <input type="text" id="company" placeholder="Company">
         <input type="text" id="position" placeholder="Position">
         <input type="text" id="subject" placeholder="Subject">
-        <textarea id="body" rows="10" placeholder="Email Body"></textarea>
+       <div class="quill-wrapper">
+
+    <div id="editor"></div>
+
+</div>
+
+<input type="hidden" id="body">
         <button class="btn primary-btn" onclick="saveTemplate()">Save Template</button>
     </div>
 </div>
@@ -46,5 +52,6 @@ function closeTemplateModal() {
 </script>
 
 <script src="js/templates.js"></script>
+<script src="js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>

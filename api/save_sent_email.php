@@ -4,6 +4,10 @@ $file = '../data/sent_emails.json';
 
 $data = json_decode(file_get_contents($file), true);
 
+if(!$data){
+$data = [];
+}
+
 $data[] = [
 
 "to_email" => $_POST['to_email'],

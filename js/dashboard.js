@@ -14,15 +14,30 @@ renderCharts(data);
 
 function renderStats(){
 
-document.getElementById('totalEmails').innerText = emails.length;
+document.getElementById('totalEmails')
+.innerText = emails.length;
 
-let companies = [...new Set(emails.map(e=>e.company))];
-document.getElementById('totalCompanies').innerText = companies.length;
+let companies =
+[...new Set(emails.map(e=>e.company))];
 
-let positions = [...new Set(emails.map(e=>e.position))];
-document.getElementById('totalPositions').innerText = positions.length;
+document.getElementById('totalCompanies')
+.innerText = companies.length;
 
-document.getElementById('todayEmails').innerText = emails.length;
+let positions =
+[...new Set(emails.map(e=>e.position))];
+
+document.getElementById('totalPositions')
+.innerText = positions.length;
+
+let today =
+new Date().toLocaleDateString('en-GB');
+
+let todayCount =
+emails.filter(e=>e.date.includes(today))
+.length;
+
+document.getElementById('todayEmails')
+.innerText = todayCount;
 
 }
 

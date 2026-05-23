@@ -27,5 +27,6 @@ placeholder="Search company, position, title">
 </div>
 
 <script src="js/sent_emails.js"></script>
+<script src="js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>

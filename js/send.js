@@ -1,46 +1,96 @@
-function openSendPopup(){
+let allTemplates = [];
+
+/*
+========================
+OPEN SEND POPUP
+========================
+*/
+
+function openSendPopup() {
 
 fetch('send_popup.php')
-.then(res=>res.text())
-.then(html=>{
 
-if(document.getElementById('sendModal')){
-document.getElementById('sendModal').remove();
+.then(res => res.text())
+
+.then(html => {
+
+let oldModal =
+document.getElementById('sendModal');
+
+if (oldModal) {
+oldModal.remove();
 }
 
-document.body.insertAdjacentHTML('beforeend',html);
+document.body.insertAdjacentHTML(
+'beforeend',
+html
+);
 
 loadCompanies();
+
+})
+
+.catch(error => {
+
+console.log(error);
+
+alert('Failed to load popup');
 
 });
 
 }
 
-function closeSendPopup(){
+/*
+========================
+CLOSE POPUP
+========================
+*/
 
-let modal = document.getElementById('sendModal');
+function closeSendPopup() {
 
-if(modal){
+let modal =
+document.getElementById('sendModal');
+
+if (modal) {
 modal.remove();
 }
 
 }
 
-function loadCompanies(){
+/*
+========================
+LOAD COMPANIES
+========================
+*/
+
+function loadCompanies() {
 
 fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
 
-let companies = [...new Set(data.map(t=>t.company))];
+.then(res => res.json())
+
+.then(data => {
+
+allTemplates = data;
+
+let companies = [
+...new Set(
+data.map(t => t.company)
+)
+];
 
 let select =
 document.getElementById('sendCompany');
 
-select.innerHTML =
-'<option value="">Select Company</option>';
+if (!select) return;
 
-companies.forEach(company=>{
+select.innerHTML = `
+<option value="">
+Select Company
+</option>
+`;
+
+companies.forEach(company => {
 
 select.innerHTML += `
 <option value="${company}">
@@ -54,25 +104,32 @@ ${company}
 
 }
 
-function loadPositions(){
+/*
+========================
+LOAD POSITIONS
+========================
+*/
 
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
+function loadPositions() {
 
 let company =
 document.getElementById('sendCompany').value;
 
 let filtered =
-data.filter(t=>t.company==company);
+allTemplates.filter(
+t => t.company === company
+);
 
 let select =
 document.getElementById('sendPosition');
 
-select.innerHTML =
-'<option value="">Select Position</option>';
+select.innerHTML = `
+<option value="">
+Select Position
+</option>
+`;
 
-filtered.forEach(t=>{
+filtered.forEach(t => {
 
 select.innerHTML += `
 <option value="${t.position}">
@@ -82,11 +139,61 @@ ${t.position}
 
 });
 
-});
+loadPreview();
 
 }
 
-function sendEmail(){
+/*
+========================
+LOAD TEMPLATE PREVIEW
+========================
+*/
+
+function loadPreview() {
+
+let company =
+document.getElementById('sendCompany').value;
+
+let position =
+document.getElementById('sendPosition').value;
+
+let template =
+allTemplates.find(t =>
+t.company === company &&
+t.position === position
+);
+
+if (!template) return;
+
+let previewSubject =
+document.getElementById('previewSubject');
+
+let previewBody =
+document.getElementById('previewBody');
+
+if (previewSubject) {
+
+previewSubject.innerHTML =
+template.subject;
+
+}
+
+if (previewBody) {
+
+previewBody.innerHTML =
+template.body;
+
+}
+
+}
+
+/*
+========================
+SEND EMAIL
+========================
+*/
+
+function sendEmail() {
 
 let to =
 document.getElementById('toEmail').value;
@@ -97,55 +204,149 @@ document.getElementById('sendCompany').value;
 let position =
 document.getElementById('sendPosition').value;
 
-if(to=='' || company=='' || position==''){
+/*
+========================
+VALIDATION
+========================
+*/
+
+if (
+to === '' ||
+company === '' ||
+position === ''
+) {
 
 alert('Please fill all fields');
+
 return;
 
 }
 
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
+/*
+========================
+GET TEMPLATE
+========================
+*/
 
 let template =
-data.find(t=>
-t.company==company &&
-t.position==position
+allTemplates.find(t =>
+
+t.company === company &&
+t.position === position
+
 );
 
-if(!template){
+if (!template) {
 
 alert('Template not found');
+
 return;
 
 }
 
-let saveData = new FormData();
+/*
+========================
+SAVE SENT EMAIL
+========================
+*/
 
-saveData.append('to_email',to);
-saveData.append('company',company);
-saveData.append('title',template.title);
-saveData.append('position',position);
-saveData.append('subject',template.subject);
+let saveData =
+new FormData();
 
-fetch('api/save_sent_email.php',{
+saveData.append(
+'to_email',
+to
+);
 
-method:'POST',
-body:saveData
+saveData.append(
+'company',
+company
+);
 
-})
-.then(()=>{
+saveData.append(
+'title',
+template.title
+);
+
+saveData.append(
+'position',
+position
+);
+
+saveData.append(
+'subject',
+template.subject
+);
+
+fetch(
+'api/save_sent_email.php',
+{
+method: 'POST',
+body: saveData
+}
+)
+
+.then(res => res.text())
+
+.then(() => {
+
+/*
+========================
+OPEN OUTLOOK
+========================
+*/
 
 let url =
 `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(template.subject)}&body=${encodeURIComponent(template.body)}`;
 
-window.open(url,'_blank');
+window.open(
+url,
+'_blank'
+);
+
+/*
+========================
+CLOSE POPUP
+========================
+*/
 
 closeSendPopup();
 
-});
+})
+
+.catch(error => {
+
+console.log(error);
+
+alert('Failed to send email');
 
 });
 
 }
+
+/*
+========================
+TOPBAR BUTTON
+========================
+*/
+
+document.addEventListener(
+'DOMContentLoaded',
+() => {
+
+let sendBtn =
+document.getElementById(
+'sendEmailBtn'
+);
+
+if (sendBtn) {
+
+sendBtn.addEventListener(
+'click',
+openSendPopup
+);
+
+}
+
+}
+);

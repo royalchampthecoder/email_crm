@@ -54,5 +54,6 @@ include 'includes/sidebar.php';
 </div>
 
 <script src="js/dashboard.js"></script>
+<script src="js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>
