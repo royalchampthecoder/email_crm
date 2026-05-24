@@ -61,5 +61,14 @@
         "subject": "Job Opportunity",
         "status": "Sent",
         "date": "23-05-2026 02:59 PM"
+    },
+    {
+        "to_email": "adsda@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "24-05-2026 23:17 PM"
     }
 ]

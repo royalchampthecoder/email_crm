@@ -1,716 +1,3364 @@
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\delete_template.php =====
+===== api\config.php =====
 <?php
+// ================================================
+// SECURITY FUNCTIONS
+// ================================================
+
+function sanitizeInput(string $input): string {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
+function validateEmail(string $email): bool {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function validateRequired(string $value): bool {
+    return !empty(trim($value));
+}
+
+function getDataFile(string $filePath): array {
+    if (!file_exists($filePath)) {
+        file_put_contents($filePath, json_encode([]));
+        return [];
+    }
+    $content = file_get_contents($filePath);
+    $data = json_decode($content, true);
+    return $data ?: [];
+}
+
+function saveDataFile(string $filePath, array $data): bool {
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    file_put_contents($filePath, $json, LOCK_EX);
+    return true;
+}
+
+function sendJSON(array $data): void {
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
+}
+
+function sendError(string $message, int $code = 400): void {
+    http_response_code($code);
+    sendJSON(['error' => $message]);
+}
+
+function sendSuccess(string $message, array $data = []): void {
+    sendJSON(['success' => $message, 'data' => $data]);
+}
+
+// ================================================
+// PREVENT DIRECT ACCESS
+// ================================================
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
+    sendError('Invalid request method', 405);
+}
+?>
+
+===== api\delete_template.php =====
+<?php
+require_once '../api/config.php';
 
 $file = '../data/templates.json';
 
-$data = json_decode(file_get_contents($file), true);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $index = isset($_POST['index']) ? (int)$_POST['index'] : -1;
 
-unset($data[$_POST['index']]);
+    if ($index < 0) {
+        sendError('Invalid index');
+        exit;
+    }
 
-$data = array_values($data);
+    $data = getDataFile($file);
 
-file_put_contents($file,
-json_encode($data, JSON_PRETTY_PRINT));
+    if (!isset($data[$index])) {
+        sendError('Template not found', 404);
+        exit;
+    }
 
-echo "deleted";
+    unset($data[$index]);
+    $data = array_values($data);
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\get_sent_emails.php =====
-<?php
-
-echo file_get_contents('../data/sent_emails.json');
-
+    if (saveDataFile($file, $data)) {
+        sendSuccess('Template deleted successfully');
+    } else {
+        sendError('Failed to delete template', 500);
+    }
+}
 ?>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\get_templates.php =====
+===== api\get_sent_emails.php =====
 <?php
+require_once '../api/config.php';
 
-echo file_get_contents('../data/templates.json');
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    sendError('Method not allowed', 405);
+}
 
-?>
+$file = '../data/sent_emails.json';
+$data = getDataFile($file);
+sendJSON($data);
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\save_sent_email.php =====
+===== api\get_templates.php =====
 <?php
+require_once '../api/config.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    sendError('Method not allowed', 405);
+}
+
+$file = '../data/templates.json';
+$data = getDataFile($file);
+sendJSON($data);
+
+===== api\save_sent_email.php =====
+<?php
+require_once '../api/config.php';
 
 $file = '../data/sent_emails.json';
 
-$data = json_decode(file_get_contents($file), true);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $to_email = isset($_POST['to_email']) ? sanitizeInput($_POST['to_email']) : '';
+    $title = isset($_POST['title']) ? sanitizeInput($_POST['title']) : '';
+    $company = isset($_POST['company']) ? sanitizeInput($_POST['company']) : '';
+    $position = isset($_POST['position']) ? sanitizeInput($_POST['position']) : '';
+    $subject = isset($_POST['subject']) ? sanitizeInput($_POST['subject']) : '';
 
-$data[] = [
+    // Validation
+    if (!validateEmail($to_email)) {
+        sendError('Invalid email address');
+        exit;
+    }
+    if (!validateRequired($title) || !validateRequired($company) || 
+        !validateRequired($position) || !validateRequired($subject)) {
+        sendError('All fields are required');
+        exit;
+    }
 
-"to_email" => $_POST['to_email'],
-"title" => $_POST['title'],
-"company" => $_POST['company'],
-"position" => $_POST['position'],
-"subject" => $_POST['subject'],
-"status" => "Sent",
-"date" => date('d-m-Y h:i A')
+    $data = getDataFile($file);
 
-];
+    $email = [
+        'to_email' => $to_email,
+        'title' => $title,
+        'company' => $company,
+        'position' => $position,
+        'subject' => $subject,
+        'status' => 'Sent',
+        'date' => date('d-m-Y H:i A')
+    ];
 
-file_put_contents($file,
-json_encode($data, JSON_PRETTY_PRINT));
+    $data[] = $email;
 
-echo "saved";
+    if (saveDataFile($file, $data)) {
+        sendSuccess('Email saved successfully', ['email' => $email]);
+    } else {
+        sendError('Failed to save email', 500);
+    }
+}
+?>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\api\save_template.php =====
+===== api\save_template.php =====
 <?php
+require_once '../api/config.php';
 
 $file = '../data/templates.json';
 
-$data = json_decode(file_get_contents($file), true);
-
-$template = [
-
-"title" => $_POST['title'],
-"company" => $_POST['company'],
-"position" => $_POST['position'],
-"subject" => $_POST['subject'],
-"body" => $_POST['body'],
-"date" => date('d-m-Y h:i A')
-
-];
-
-if($_POST['index'] !== ''){
-
-$data[$_POST['index']] = $template;
-
-}else{
-
-$data[] = $template;
-
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $data = getDataFile($file);
+    sendJSON($data);
 }
 
-file_put_contents($file,
-json_encode($data, JSON_PRETTY_PRINT));
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $index = isset($_POST['index']) ? trim($_POST['index']) : '';
+    $title = isset($_POST['title']) ? sanitizeInput($_POST['title']) : '';
+    $company = isset($_POST['company']) ? sanitizeInput($_POST['company']) : '';
+    $position = isset($_POST['position']) ? sanitizeInput($_POST['position']) : '';
+    $subject = isset($_POST['subject']) ? sanitizeInput($_POST['subject']) : '';
+    $body = isset($_POST['body']) ? $_POST['body'] : '';
 
-echo "saved";
+    // Validation
+    if (!validateRequired($title) || !validateRequired($company) || 
+        !validateRequired($position) || !validateRequired($subject)) {
+        sendError('All fields are required');
+        exit;
+    }
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\css\style.css =====
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial;
+    $data = getDataFile($file);
+
+    $template = [
+        'title' => $title,
+        'company' => $company,
+        'position' => $position,
+        'subject' => $subject,
+        'body' => $body,
+        'date' => date('d-m-Y H:i A')
+    ];
+
+    if ($index !== '' && isset($data[(int)$index])) {
+        $data[(int)$index] = $template;
+    } else {
+        $data[] = $template;
+    }
+
+    if (saveDataFile($file, $data)) {
+        sendSuccess('Template saved successfully', ['template' => $template]);
+    } else {
+        sendError('Failed to save template', 500);
+    }
+}
+?>
+
+===== assets\css\modern.css =====
+/* ================================================
+   MODERN EMAIL CRM DASHBOARD - DESIGN SYSTEM
+   Professional SaaS UI with Dark Mode Support
+   ================================================ */
+
+:root {
+  /* Colors - Light Mode */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --secondary: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  
+  /* Grayscale */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  
+  /* Sidebar */
+  --sidebar-bg: #0f172a;
+  --sidebar-hover: #1e293b;
+  --sidebar-text: #e2e8f0;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.2);
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body{
-background:#f4f7fb;
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --border: #334155;
+  --border-light: #1e293b;
+  --sidebar-bg: #0a0f1b;
+  --sidebar-hover: #1e293b;
+  --sidebar-text: #f1f5f9;
 }
 
-.main-layout{
-display:flex;
-min-height:100vh;
+/* ================================================
+   RESET & BASE STYLES
+   ================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.sidebar{
-width:250px;
-background:#111827;
-padding:20px;
-color:white;
+html {
+  scroll-behavior: smooth;
 }
 
-.logo{
-margin-bottom:40px;
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: var(--transition);
 }
 
-.menu{
-list-style:none;
+/* ================================================
+   ANIMATIONS
+   ================================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.menu li{
-margin-bottom:15px;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.menu a{
-color:white;
-text-decoration:none;
-display:block;
-padding:12px;
-border-radius:10px;
-transition:0.3s;
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.menu a:hover,
-.menu a.active{
-background:#2563eb;
+@keyframes shimmer {
+  0%, 100% {
+    background-position: -1000px 0;
+  }
+  50% {
+    background-position: 1000px 0;
+  }
 }
 
-.content{
-flex:1;
-padding:20px;
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-.topbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:30px;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.btn{
-padding:12px 20px;
-border:none;
-border-radius:10px;
-cursor:pointer;
+/* ================================================
+   LAYOUT
+   ================================================ */
+
+.main-layout {
+  display: flex;
+  min-height: 100vh;
 }
 
-.primary-btn{
-background:#2563eb;
-color:white;
+.content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  animation: fadeIn 0.4s ease;
+  background-color: var(--bg-primary);
 }
 
-.stats-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:20px;
-margin-bottom:30px;
+/* ================================================
+   SIDEBAR
+   ================================================ */
+
+.sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  transition: var(--transition);
 }
 
-.stat-card{
-background:white;
-padding:25px;
-border-radius:15px;
-box-shadow:0 2px 10px rgba(0,0,0,0.08);
+.sidebar::-webkit-scrollbar {
+  width: 6px;
 }
 
-.charts-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:20px;
-margin-bottom:30px;
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.chart-card{
-background:white;
-padding:20px;
-border-radius:15px;
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
 }
 
-.search-box{
-margin-bottom:20px;
+.logo {
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.search-box input,
-.filters input,
-.filters select,
-.modal-content input,
-.modal-content textarea,
-.modal-content select{
-width:100%;
-padding:12px;
-margin-bottom:15px;
-border:1px solid #ddd;
-border-radius:10px;
+.logo h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.cards-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:20px;
+.menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
-.email-card{
-background:white;
-padding:20px;
-border-radius:15px;
-box-shadow:0 2px 10px rgba(0,0,0,0.08);
+.menu a {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--sidebar-text);
+  transition: var(--transition-fast);
+  font-weight: 500;
 }
 
-.card-actions{
-display:flex;
-gap:10px;
-margin-top:15px;
+.menu a:hover {
+  background-color: var(--sidebar-hover);
+  transform: translateX(4px);
 }
 
-.icon-btn{
-background:#eee;
-padding:10px;
-border:none;
-border-radius:8px;
-cursor:pointer;
+.menu a.active {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
+
+.menu a i {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ================================================
+   MOBILE SIDEBAR
+   ================================================ */
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  z-index: 999;
+  box-shadow: var(--shadow-lg);
+  font-size: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 280px;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1001;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .sidebar-toggle {
+    display: flex;
+  }
+  
+  .main-layout::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    z-index: 999;
+    transition: background 0.3s ease;
+  }
+  
+  .main-layout.sidebar-open::before {
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+  }
+}
+
+/* ================================================
+   TOPBAR
+   ================================================ */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.topbar h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* ================================================
+   BUTTONS
+   ================================================ */
+
+.btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.primary-btn:hover {
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.secondary-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.secondary-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ================================================
+   CARDS
+   ================================================ */
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  animation: fadeIn 0.4s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  animation: slideInLeft 0.4s ease;
+  border: 1px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card h3 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: var(--primary);
+}
+
+.stat-card p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.email-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  animation: fadeIn 0.4s ease;
+}
+
+.email-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  border-color: var(--primary-light);
+}
+
+.email-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.email-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  word-break: break-all;
+}
+
+.email-card .badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: var(--spacing-sm);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+/* ================================================
+   GRIDS
+   ================================================ */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.4s ease;
+}
+
+.chart-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.chart-card canvas {
+  width: 100% !important;
+  height: 280px !important;
+}
+
+/* ================================================
+   FORMS & INPUTS
+   ================================================ */
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition-fast);
+  font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* ================================================
+   SEARCH & FILTERS
+   ================================================ */
+
+.search-box {
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-box input {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.filters select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563eb' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  padding-right: var(--spacing-2xl);
+  appearance: none;
+}
+
+/* ================================================
+   MODAL
+   ================================================ */
 
 .modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100vw;
-height:100vh;
-background:rgba(0,0,0,0.3);
-align-items:center;
-justify-content:center;
-z-index:2000;
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:20px;
 }
-.modal.show {
-	display: flex;
+
+.modal.show{
+  display:flex !important;
 }
 
 .modal-content{
-background:white;
-padding:36px 32px;
-border-radius:12px;
-min-width:350px;
-max-width:95vw;
-position:relative;
-box-shadow:0 4px 24px rgba(37,99,235,0.13);
+  width:100%;
+  max-width:700px;
+  background:#fff;
+  border-radius:16px;
+  padding:24px;
+  max-height:90vh;
+  overflow-y:auto;
+  animation:scaleIn .2s ease;
 }
 
-.close{
-position:absolute;
-top:10px;
-right:18px;
-font-size:1.5rem;
-color:#888;
-cursor:pointer;
+[data-theme="dark"] .modal-content{
+  background:#0f172a;
 }
 
-.filters{
-display:grid;
-grid-template-columns:2fr 1fr 1fr;
-gap:15px;
-margin-bottom:20px;
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;  /* ADD THIS LINE */
 }
 
-@media(max-width:768px){
-
-.sidebar{
-width:80px;
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.sidebar .logo h2,
-.sidebar .menu a{
-font-size:12px;
+.close {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+  border: none;
+  background: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
 }
 
-.charts-grid{
-grid-template-columns:1fr;
+.close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transform: rotate(90deg);
 }
 
-.filters{
-grid-template-columns:1fr;
+/* ================================================
+   QUILL EDITOR
+   ================================================ */
+
+.quill-wrapper {
+  margin: var(--spacing-lg) 0;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
+
+#editor {
+  height: 280px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.ql-toolbar {
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: var(--bg-secondary);
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar button.ql-active {
+  color: var(--primary);
+}
+
+.ql-container {
+  border: none !important;
+  font-size: 14px;
+}
+
+.ql-editor {
+  min-height: 240px;
+  color: var(--text-primary);
+  padding: var(--spacing-lg);
+}
+
+.ql-editor.ql-blank::before {
+  color: var(--text-tertiary);
+}
+
+/* ================================================
+   TOAST NOTIFICATIONS
+   ================================================ */
+
+.toast-container {
+  position: fixed;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  z-index: 3000;
+  max-width: 400px;
+}
+
+.toast {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  animation: slideDown 0.3s ease;
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.toast.success {
+  border-left: 4px solid var(--success);
+}
+
+.toast.error {
+  border-left: 4px solid var(--danger);
+}
+
+.toast.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.toast.info {
+  border-left: 4px solid var(--info);
+}
+
+.toast-close {
+  cursor: pointer;
+  margin-left: auto;
+  color: var(--text-tertiary);
+  transition: var(--transition-fast);
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+}
+
+/* ================================================
+   LOADING STATES
+   ================================================ */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-card {
+  height: 200px;
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.skeleton-title {
+  height: 20px;
+  margin-bottom: var(--spacing-md);
+}
+
+/* ================================================
+   EMPTY STATE
+   ================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+/* ================================================
+   RESPONSIVE BREAKPOINTS
+   ================================================ */
+
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+  }
+  
+  .main-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 280px;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1001;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .content {
+    padding: var(--spacing-md);
+  }
+  
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filters {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+  }
+  
+  .menu {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .topbar h2 {
+    font-size: 18px;
+  }
+  
+  .email-card {
+    padding: var(--spacing-md);
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+  }
+  
+  .card-actions .btn {
+    width: 100%;
+  }
+  
+  .modal-content {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* ================================================
+   UTILITY CLASSES
+   ================================================ */
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+
+.text-center { text-align: center; }
+.text-muted { color: var(--text-secondary); }
+.text-small { font-size: 12px; }
+
+.hidden { display: none; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+===== assets\js\dashboard.js =====
+/* ================================================
+   DASHBOARD - Data Management
+   ================================================ */
+
+let emails = [];
+let stats = {
+  totalEmails: 0,
+  totalCompanies: 0,
+  totalPositions: 0,
+  todayEmails: 0,
+  thisWeekEmails: 0
+};
+
+/* ================================================
+   FETCH & INITIALIZE
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch('api/get_sent_emails.php');
+    const data = await response.json();
+
+    emails = Array.isArray(data) ? data : (data.data || []);
+    
+    calculateStats();
+    renderStats();
+    renderRecent();
+    renderCharts();
+  } catch (error) {
+    console.error('Error loading emails:', error);
+    toast.error('Failed to load dashboard data');
+  }
+});
+
+/* ================================================
+   STATISTICS CALCULATION
+   ================================================ */
+
+function calculateStats() {
+  stats.totalEmails = emails.length;
+
+  const companies = new Set(emails.map(e => e.company));
+  stats.totalCompanies = companies.size;
+
+  const positions = new Set(emails.map(e => e.position));
+  stats.totalPositions = positions.size;
+
+  const today = new Date().toLocaleDateString('en-GB');
+  stats.todayEmails = emails.filter(e => {
+    const emailDate = new Date(e.date.split(' ')[0].split('-').reverse().join('-')).toLocaleDateString('en-GB');
+    return emailDate === today;
+  }).length;
+
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  stats.thisWeekEmails = emails.filter(e => {
+    const emailDate = new Date(e.date.split(' ')[0].split('-').reverse().join('-'));
+    return emailDate >= weekAgo;
+  }).length;
+}
+
+/* ================================================
+   RENDER STATISTICS
+   ================================================ */
+
+function renderStats() {
+  const statsHtml = `
+    <div class="stat-card">
+      <h3>${stats.totalEmails}</h3>
+      <p>Total Emails Sent</p>
+    </div>
+    <div class="stat-card">
+      <h3>${stats.totalCompanies}</h3>
+      <p>Total Companies</p>
+    </div>
+    <div class="stat-card">
+      <h3>${stats.totalPositions}</h3>
+      <p>Total Positions</p>
+    </div>
+    <div class="stat-card">
+      <h3>${stats.todayEmails}</h3>
+      <p>Today's Emails</p>
+    </div>
+    <div class="stat-card">
+      <h3>${stats.thisWeekEmails}</h3>
+      <p>This Week</p>
+    </div>
+  `;
+
+  const statsGrid = document.getElementById('statsGrid');
+  if (statsGrid) {
+    statsGrid.innerHTML = statsHtml;
+  }
+}
+
+/* ================================================
+   RENDER RECENT EMAILS
+   ================================================ */
+
+function renderRecent() {
+  let html = '';
+
+  if (emails.length === 0) {
+    html = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa fa-inbox"></i></div>
+        <h3>No emails sent yet</h3>
+        <p>Start sending emails to see them appear here</p>
+      </div>
+    `;
+  } else {
+    emails.slice(0, 8).forEach(email => {
+      html += `
+        <div class="email-card">
+          <h3>${email.company}</h3>
+          <p><strong>Title:</strong> ${email.title}</p>
+          <p><strong>Position:</strong> ${email.position}</p>
+          <p><strong>Email:</strong> ${email.to_email}</p>
+          <p class="text-small text-muted">${DateHelper.daysAgo(email.date)}</p>
+          <span class="badge">${email.status}</span>
+        </div>
+      `;
+    });
+  }
+
+  const recentContainer = document.getElementById('recentEmails');
+  if (recentContainer) {
+    recentContainer.innerHTML = html;
+  }
+}
+
+/* ================================================
+   RENDER CHARTS
+   ================================================ */
+
+function renderCharts() {
+  renderCompanyChart();
+  renderDateChart();
+}
+
+function renderCompanyChart() {
+  const companyCounts = {};
+  emails.forEach(e => {
+    companyCounts[e.company] = (companyCounts[e.company] || 0) + 1;
+  });
+
+  const sortedCompanies = Object.entries(companyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  const ctx = document.getElementById('companyChart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sortedCompanies.map(([name]) => name),
+      datasets: [{
+        label: 'Emails Sent',
+        data: sortedCompanies.map(([_, count]) => count),
+        backgroundColor: [
+          'rgba(37, 99, 235, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(6, 182, 212, 0.8)',
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(34, 197, 94, 0.8)',
+          'rgba(249, 115, 22, 0.8)'
+        ],
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDateChart() {
+  const dateCounts = {};
+  
+  emails.forEach(e => {
+    const date = e.date.split(' ')[0];
+    dateCounts[date] = (dateCounts[date] || 0) + 1;
+  });
+
+  const sortedDates = Object.entries(dateCounts).sort();
+  const last30Days = sortedDates.slice(-30);
+
+  const ctx = document.getElementById('dateChart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: last30Days.map(([date]) => date),
+      datasets: [{
+        label: 'Emails Sent',
+        data: last30Days.map(([_, count]) => count),
+        borderColor: 'rgba(37, 99, 235, 1)',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ================================================
+   SEARCH FUNCTIONALITY
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('keyup', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = emails.filter(email =>
+        email.company.toLowerCase().includes(query) ||
+        email.position.toLowerCase().includes(query) ||
+        email.title.toLowerCase().includes(query) ||
+        email.to_email.toLowerCase().includes(query)
+      );
+
+      let html = '';
+      if (filtered.length === 0) {
+        html = `
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fa fa-search"></i></div>
+            <h3>No results found</h3>
+            <p>Try adjusting your search terms</p>
+          </div>
+        `;
+      } else {
+        filtered.forEach(email => {
+          html += `
+            <div class="email-card">
+              <h3>${email.company}</h3>
+              <p><strong>Title:</strong> ${email.title}</p>
+              <p><strong>Position:</strong> ${email.position}</p>
+              <p><strong>Email:</strong> ${email.to_email}</p>
+              <p class="text-small text-muted">${email.date}</p>
+              <span class="badge">${email.status}</span>
+            </div>
+          `;
+        });
+      }
+
+      const recentContainer = document.getElementById('recentEmails');
+      if (recentContainer) {
+        recentContainer.innerHTML = html;
+      }
+    });
+  }
+});
+
+===== assets\js\send.js =====
+/* ================================================
+   SEND EMAIL - Popup Management
+   ================================================ */
+
+let allTemplates = [];
+
+/* ================================================
+   OPEN SEND POPUP
+   ================================================ */
+
+async function openSendPopup() {
+  try {
+    const response = await fetch('send_popup.php');
+    const html = await response.text();
+
+    let oldModal = document.getElementById('sendModal');
+    if (oldModal) oldModal.remove();
+
+    document.body.insertAdjacentHTML('beforeend', html);
+    
+    loadCompanies();
+    setupPopupEvents();
+  } catch (error) {
+    console.error('Error loading popup:', error);
+    toast.error('Failed to load send popup');
+  }
+}
+
+/* ================================================
+   SETUP POPUP EVENTS
+   ================================================ */
+
+function setupPopupEvents() {
+  const companySelect = document.getElementById('sendCompany');
+  const positionSelect = document.getElementById('sendPosition');
+  const sendBtn = document.getElementById('sendBtn');
+  const closeBtn = modal.querySelector('.close');
+
+  if (companySelect) {
+    companySelect.addEventListener('change', loadPositions);
+  }
+
+  if (positionSelect) {
+    positionSelect.addEventListener('change', loadPreview);
+  }
+
+  if (sendBtn) {
+    sendBtn.addEventListener('click', sendEmail);
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeSendPopup);
+  }
+
+  // Close on backdrop click
+  const modal = document.getElementById('sendModal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeSendPopup();
+    });
+  }
+}
+
+/* ================================================
+   CLOSE POPUP
+   ================================================ */
+
+function closeSendPopup() {
+  const modal = document.getElementById('sendModal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+  }
+}
+
+/* ================================================
+   LOAD COMPANIES
+   ================================================ */
+
+async function loadCompanies() {
+  try {
+    const response = await fetch('api/get_templates.php');
+    const data = await response.json();
+
+    allTemplates = Array.isArray(data) ? data : (data.data || []);
+
+    const companies = [...new Set(allTemplates.map(t => t.company))];
+    const select = document.getElementById('sendCompany');
+
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select Company</option>';
+    companies.forEach(company => {
+      select.innerHTML += `<option value="${company}">${company}</option>`;
+    });
+  } catch (error) {
+    console.error('Error loading companies:', error);
+    toast.error('Failed to load companies');
+  }
+}
+
+/* ================================================
+   LOAD POSITIONS
+   ================================================ */
+
+function loadPositions() {
+  const company = document.getElementById('sendCompany').value;
+  const filtered = allTemplates.filter(t => t.company === company);
+  const select = document.getElementById('sendPosition');
+
+  select.innerHTML = '<option value="">Select Position</option>';
+  filtered.forEach(t => {
+    select.innerHTML += `<option value="${t.position}">${t.position}</option>`;
+  });
+
+  loadPreview();
+}
+
+/* ================================================
+   LOAD TEMPLATE PREVIEW
+   ================================================ */
+
+function loadPreview() {
+  const company = document.getElementById('sendCompany').value;
+  const position = document.getElementById('sendPosition').value;
+  const template = allTemplates.find(t =>
+    t.company === company && t.position === position
+  );
+
+  if (!template) return;
+
+  const previewSubject = document.getElementById('previewSubject');
+  const previewBody = document.getElementById('previewBody');
+
+  if (previewSubject) previewSubject.innerHTML = template.subject || 'No subject';
+  if (previewBody) previewBody.innerHTML = template.body || 'No body';
+}
+
+/* ================================================
+   SEND EMAIL
+   ================================================ */
+
+async function sendEmail() {
+  const toEmail = document.getElementById('toEmail').value;
+  const company = document.getElementById('sendCompany').value;
+  const position = document.getElementById('sendPosition').value;
+
+  // Validation
+  if (!toEmail || !company || !position) {
+    toast.error('Please fill all fields');
+    return;
+  }
+
+  if (!FormValidator.email(toEmail)) {
+    toast.error('Please enter a valid email address');
+    return;
+  }
+
+  // Get template
+  const template = allTemplates.find(t =>
+    t.company === company && t.position === position
+  );
+
+  if (!template) {
+    toast.error('Template not found');
+    return;
+  }
+
+  // Show loading state
+  const sendBtn = document.getElementById('sendBtn');
+  const originalText = sendBtn.innerHTML;
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+
+  try {
+    const formData = new FormData();
+    formData.append('to_email', toEmail);
+    formData.append('company', company);
+    formData.append('title', template.title);
+    formData.append('position', position);
+    formData.append('subject', template.subject);
+
+    const response = await fetch('api/save_sent_email.php', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.text();
+
+    // Open Outlook
+    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(template.subject)}&body=${encodeURIComponent(template.body)}`;
+    window.open(url, '_blank');
+
+    toast.success('Email saved and Outlook opened!');
+    closeSendPopup();
+  } catch (error) {
+    console.error('Error sending email:', error);
+    toast.error('Failed to send email');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = originalText;
+  }
+}
+
+/* ================================================
+   SETUP SEND BUTTON
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sendBtn = document.getElementById('sendEmailBtn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', openSendPopup);
+  }
+});
+
+===== assets\js\sent_emails.js =====
+/* ================================================
+   SENT EMAILS PAGE
+   ================================================ */
+
+let allEmails = [];
+
+/* ================================================
+   LOAD EMAILS ON PAGE LOAD
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch('api/get_sent_emails.php');
+    const data = await response.json();
+
+    allEmails = Array.isArray(data) ? data : (data.data || []);
+    
+    loadCompanies();
+    renderEmails(allEmails);
+  } catch (error) {
+    console.error('Error loading emails:', error);
+    toast.error('Failed to load sent emails');
+  }
+});
+
+/* ================================================
+   LOAD COMPANIES FILTER
+   ================================================ */
+
+function loadCompanies() {
+  const companies = [...new Set(allEmails.map(e => e.company))];
+  const select = document.getElementById('companyFilter');
+
+  if (!select) return;
+
+  select.innerHTML = '<option value="">All Companies</option>';
+  companies.forEach(company => {
+    select.innerHTML += `<option value="${company}">${company}</option>`;
+  });
+}
+
+/* ================================================
+   RENDER EMAILS
+   ================================================ */
+
+function renderEmails(data) {
+  const container = document.getElementById('sentEmailsContainer');
+  if (!container) return;
+
+  let html = '';
+
+  if (data.length === 0) {
+    html = `
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="empty-state-icon"><i class="fa fa-inbox"></i></div>
+        <h3>No emails found</h3>
+        <p>Start sending emails to see them appear here</p>
+      </div>
+    `;
+  } else {
+    data.forEach(email => {
+      html += `
+        <div class="email-card">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
+            <div>
+              <h3>${email.company}</h3>
+              <p style="font-size: 12px; color: var(--text-tertiary);">${email.date}</p>
+            </div>
+            <span class="badge">${email.status}</span>
+          </div>
+
+          <p><strong>Title:</strong> ${email.title}</p>
+          <p><strong>Position:</strong> ${email.position}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email.to_email}" style="color: var(--primary); text-decoration: none;">${email.to_email}</a></p>
+          <p><strong>Subject:</strong> ${email.subject}</p>
+
+          <div class="card-actions">
+            <button class="btn secondary-btn" onclick="copyToClipboard('${email.to_email}')">
+              <i class="fa fa-copy"></i> Copy Email
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+/* ================================================
+   FILTER EMAILS
+   ================================================ */
+
+function filterEmails() {
+  const search = document.getElementById('emailSearch').value.toLowerCase();
+  const company = document.getElementById('companyFilter').value;
+  const status = document.getElementById('statusFilter').value;
+
+  const filtered = allEmails.filter(email => {
+    const matchSearch =
+      email.company.toLowerCase().includes(search) ||
+      email.position.toLowerCase().includes(search) ||
+      email.title.toLowerCase().includes(search) ||
+      email.to_email.toLowerCase().includes(search);
+
+    const matchCompany = company === '' || email.company === company;
+    const matchStatus = status === '' || email.status === status;
+
+    return matchSearch && matchCompany && matchStatus;
+  });
+
+  renderEmails(filtered);
+}
+
+/* ================================================
+   SETUP FILTER EVENT LISTENERS
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('emailSearch');
+  const companyFilter = document.getElementById('companyFilter');
+  const statusFilter = document.getElementById('statusFilter');
+
+  if (searchInput) {
+    searchInput.addEventListener('keyup', filterEmails);
+  }
+
+  if (companyFilter) {
+    companyFilter.addEventListener('change', filterEmails);
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', filterEmails);
+  }
+});
+
+/* ================================================
+   COPY TO CLIPBOARD
+   ================================================ */
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast.success('Email copied to clipboard!');
+  }).catch(() => {
+    toast.error('Failed to copy');
+  });
+}
+
+/* ================================================
+   EXPORT TO CSV
+   ================================================ */
+
+function exportToCSV() {
+  if (allEmails.length === 0) {
+    toast.warning('No emails to export');
+    return;
+  }
+
+  const headers = ['Company', 'Title', 'Position', 'Email', 'Subject', 'Status', 'Date'];
+  const rows = allEmails.map(e => [
+    e.company,
+    e.title,
+    e.position,
+    e.to_email,
+    e.subject,
+    e.status,
+    e.date
+  ]);
+
+  let csv = headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sent-emails-${new Date().getTime()}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+
+  toast.success('Emails exported successfully!');
+}
+
+===== assets\js\templates.js =====
+/* ================================================
+   TEMPLATES PAGE
+   ================================================ */
+
+let templates = [];
+let quill = null;
+let currentEditIndex = null;
+
+/* ================================================
+   DOM READY
+   ================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  initializeQuill();
+
+  loadTemplates();
+
+  setupSearch();
+
+  setupModalClose();
+
+});
+
+/* ================================================
+   QUILL EDITOR
+   ================================================ */
+
+function initializeQuill() {
+
+  const editor = document.getElementById('editor');
+
+  if (!editor) {
+    console.error('Editor not found');
+    return;
+  }
+
+  if (typeof Quill === 'undefined') {
+    console.error('Quill JS not loaded');
+    return;
+  }
+
+  quill = new Quill('#editor', {
+    theme: 'snow',
+    placeholder: 'Write email template...',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ header: [1, 2, 3, false] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ color: [] }, { background: [] }],
+        [{ align: [] }],
+        ['link'],
+        ['clean']
+      ]
+    }
+  });
 
 }
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\footer.php =====
+/* ================================================
+   MODAL FUNCTIONS
+   ================================================ */
+
+function openTemplateModal() {
+
+  const modal = document.getElementById('templateModal');
+
+  if (!modal) {
+    console.error('Modal not found');
+    return;
+  }
+
+  clearForm();
+
+  modal.classList.add('show');
+
+  document.body.style.overflow = 'hidden';
+
+}
+
+function closeTemplateModal() {
+
+  const modal = document.getElementById('templateModal');
+
+  if (!modal) return;
+
+  modal.classList.remove('show');
+
+  document.body.style.overflow = 'auto';
+
+  currentEditIndex = null;
+
+}
+
+function setupModalClose() {
+
+  const modal = document.getElementById('templateModal');
+
+  if (!modal) return;
+
+  window.addEventListener('click', (e) => {
+
+    if (e.target === modal) {
+      closeTemplateModal();
+    }
+
+  });
+
+}
+
+/* ================================================
+   CLEAR FORM
+   ================================================ */
+
+function clearForm() {
+
+  document.getElementById('templateIndex').value = '';
+
+  document.getElementById('title').value = '';
+
+  document.getElementById('company').value = '';
+
+  document.getElementById('position').value = '';
+
+  document.getElementById('subject').value = '';
+
+  if (quill) {
+    quill.root.innerHTML = '';
+  }
+
+}
+
+/* ================================================
+   LOAD TEMPLATES
+   ================================================ */
+
+async function loadTemplates() {
+
+  try {
+
+    const response = await fetch('api/get_templates.php');
+
+    const data = await response.json();
+
+    templates = Array.isArray(data) ? data : [];
+
+    renderTemplates();
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error('Failed to load templates');
+
+  }
+
+}
+
+/* ================================================
+   RENDER TEMPLATES
+   ================================================ */
+
+function renderTemplates() {
+
+  const container = document.getElementById('templatesContainer');
+
+  if (!container) return;
+
+  if (templates.length === 0) {
+
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fa fa-file-alt"></i>
+        </div>
+
+        <h3>No Templates Found</h3>
+
+        <p>Create your first template</p>
+      </div>
+    `;
+
+    return;
+  }
+
+  let html = '';
+
+  templates.forEach((t, index) => {
+
+    html += `
+      <div class="email-card">
+
+        <h3>${t.title || ''}</h3>
+
+        <p><strong>Company:</strong> ${t.company || ''}</p>
+
+        <p><strong>Position:</strong> ${t.position || ''}</p>
+
+        <p><strong>Subject:</strong> ${t.subject || ''}</p>
+
+        <div class="card-actions">
+
+          <button class="btn secondary-btn"
+          onclick="editTemplate(${index})">
+
+            <i class="fa fa-edit"></i>
+            Edit
+
+          </button>
+
+          <button class="btn secondary-btn"
+          onclick="duplicateTemplate(${index})">
+
+            <i class="fa fa-copy"></i>
+            Duplicate
+
+          </button>
+
+          <button class="btn secondary-btn"
+          onclick="deleteTemplate(${index})">
+
+            <i class="fa fa-trash"></i>
+            Delete
+
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+  });
+
+  container.innerHTML = html;
+
+}
+
+/* ================================================
+   EDIT TEMPLATE
+   ================================================ */
+
+function editTemplate(index) {
+
+  const t = templates[index];
+
+  currentEditIndex = index;
+
+  openTemplateModal();
+
+  document.getElementById('templateIndex').value = index;
+
+  document.getElementById('title').value = t.title || '';
+
+  document.getElementById('company').value = t.company || '';
+
+  document.getElementById('position').value = t.position || '';
+
+  document.getElementById('subject').value = t.subject || '';
+
+  if (quill) {
+    quill.root.innerHTML = t.body || '';
+  }
+
+}
+
+/* ================================================
+   DUPLICATE TEMPLATE
+   ================================================ */
+
+function duplicateTemplate(index) {
+
+  const t = templates[index];
+
+  openTemplateModal();
+
+  document.getElementById('title').value =
+    (t.title || '') + ' Copy';
+
+  document.getElementById('company').value =
+    t.company || '';
+
+  document.getElementById('position').value =
+    t.position || '';
+
+  document.getElementById('subject').value =
+    t.subject || '';
+
+  if (quill) {
+    quill.root.innerHTML = t.body || '';
+  }
+
+}
+
+/* ================================================
+   SAVE TEMPLATE
+   ================================================ */
+
+async function saveTemplate() {
+
+  const title =
+    document.getElementById('title').value.trim();
+
+  const company =
+    document.getElementById('company').value.trim();
+
+  const position =
+    document.getElementById('position').value.trim();
+
+  const subject =
+    document.getElementById('subject').value.trim();
+
+  const body =
+    quill ? quill.root.innerHTML : '';
+
+  if (
+    !title ||
+    !company ||
+    !position ||
+    !subject
+  ) {
+
+    toast.error('Fill all required fields');
+
+    return;
+
+  }
+
+  const formData = new FormData();
+
+  formData.append(
+    'index',
+    document.getElementById('templateIndex').value
+  );
+
+  formData.append('title', title);
+
+  formData.append('company', company);
+
+  formData.append('position', position);
+
+  formData.append('subject', subject);
+
+  formData.append('body', body);
+
+  try {
+
+    const response = await fetch(
+      'api/save_template.php',
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+
+    const data = await response.text();
+
+    if (data.includes('error')) {
+
+      toast.error('Failed to save');
+
+    } else {
+
+      toast.success('Template saved');
+
+      closeTemplateModal();
+
+      loadTemplates();
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error('Error saving template');
+
+  }
+
+}
+
+/* ================================================
+   DELETE TEMPLATE
+   ================================================ */
+
+async function deleteTemplate(index) {
+
+  const confirmDelete =
+    confirm('Delete this template?');
+
+  if (!confirmDelete) return;
+
+  const formData = new FormData();
+
+  formData.append('index', index);
+
+  try {
+
+    const response = await fetch(
+      'api/delete_template.php',
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+
+    const data = await response.text();
+
+    if (data.includes('error')) {
+
+      toast.error('Delete failed');
+
+    } else {
+
+      toast.success('Deleted');
+
+      loadTemplates();
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error('Delete failed');
+
+  }
+
+}
+
+/* ================================================
+   SEARCH
+   ================================================ */
+
+function setupSearch() {
+
+  const search =
+    document.getElementById('templateSearch');
+
+  if (!search) return;
+
+  search.addEventListener('keyup', () => {
+
+    const query =
+      search.value.toLowerCase();
+
+    const cards =
+      document.querySelectorAll('.email-card');
+
+    cards.forEach(card => {
+
+      const text =
+        card.innerText.toLowerCase();
+
+      card.style.display =
+        text.includes(query)
+          ? 'block'
+          : 'none';
+
+    });
+
+  });
+
+}
+
+===== assets\js\utils.js =====
+/* ================================================
+   UTILITIES.JS
+   COMPLETE FIXED + MODERN VERSION
+   ================================================ */
+
+/* ================================================
+   TOAST NOTIFICATIONS
+   ================================================ */
+
+class Toast {
+
+  constructor() {
+
+    this.container = this.createContainer();
+
+  }
+
+  createContainer() {
+
+    let container =
+      document.getElementById('toastContainer');
+
+    if (!container) {
+
+      container = document.createElement('div');
+
+      container.id = 'toastContainer';
+
+      container.className = 'toast-container';
+
+      document.body.appendChild(container);
+
+    }
+
+    return container;
+
+  }
+
+  show(message, type = 'info', duration = 3000) {
+
+    const toast = document.createElement('div');
+
+    toast.className = `toast ${type}`;
+
+    toast.innerHTML = `
+      <div class="toast-inner">
+
+        <div class="toast-message">
+          ${message}
+        </div>
+
+        <button class="toast-close">
+          &times;
+        </button>
+
+      </div>
+    `;
+
+    this.container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    const closeBtn =
+      toast.querySelector('.toast-close');
+
+    closeBtn.addEventListener('click', () => {
+      this.remove(toast);
+    });
+
+    if (duration > 0) {
+
+      setTimeout(() => {
+
+        this.remove(toast);
+
+      }, duration);
+
+    }
+
+    return toast;
+
+  }
+
+  remove(toast) {
+
+    if (!toast) return;
+
+    toast.classList.remove('show');
+
+    setTimeout(() => {
+
+      if (toast.parentNode) {
+        toast.remove();
+      }
+
+    }, 300);
+
+  }
+
+  success(message, duration = 3000) {
+    return this.show(message, 'success', duration);
+  }
+
+  error(message, duration = 3000) {
+    return this.show(message, 'error', duration);
+  }
+
+  warning(message, duration = 3000) {
+    return this.show(message, 'warning', duration);
+  }
+
+  info(message, duration = 3000) {
+    return this.show(message, 'info', duration);
+  }
+
+}
+
+window.toast = new Toast();
+
+/* ================================================
+   THEME MANAGER
+   ================================================ */
+
+class ThemeManager {
+
+  constructor() {
+
+    this.theme =
+      localStorage.getItem('theme') || 'light';
+
+    this.init();
+
+  }
+
+  init() {
+
+    this.apply(this.theme);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      this.setupToggle();
+    });
+
+  }
+
+  apply(theme) {
+
+    if (theme === 'dark') {
+
+      document.documentElement
+        .setAttribute('data-theme', 'dark');
+
+    } else {
+
+      document.documentElement
+        .removeAttribute('data-theme');
+
+    }
+
+    localStorage.setItem('theme', theme);
+
+    this.theme = theme;
+
+    this.updateToggleIcon();
+
+  }
+
+  toggle() {
+
+    this.apply(
+      this.theme === 'dark'
+        ? 'light'
+        : 'dark'
+    );
+
+  }
+
+  setupToggle() {
+
+    const toggle =
+      document.getElementById('themeToggle');
+
+    if (!toggle) return;
+
+    toggle.addEventListener('click', () => {
+
+      this.toggle();
+
+    });
+
+    this.updateToggleIcon();
+
+  }
+
+  updateToggleIcon() {
+
+    const toggle =
+      document.getElementById('themeToggle');
+
+    if (!toggle) return;
+
+    toggle.innerHTML =
+      this.theme === 'dark'
+        ? '<i class="fa fa-sun"></i>'
+        : '<i class="fa fa-moon"></i>';
+
+  }
+
+}
+
+window.themeManager = new ThemeManager();
+
+/* ================================================
+   FORM VALIDATOR
+   ================================================ */
+
+class FormValidator {
+
+  static email(email) {
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      .test(email);
+
+  }
+
+  static required(value) {
+
+    return value &&
+      value.toString().trim() !== '';
+
+  }
+
+  static minLength(value, min) {
+
+    return value &&
+      value.length >= min;
+
+  }
+
+  static validate(form) {
+
+    const errors = {};
+
+    if (!form) return errors;
+
+    const fields =
+      form.querySelectorAll('[required]');
+
+    fields.forEach(field => {
+
+      const name =
+        field.name || field.id;
+
+      if (!this.required(field.value)) {
+
+        errors[name] =
+          `${name} is required`;
+
+      }
+
+      if (
+        field.type === 'email' &&
+        field.value &&
+        !this.email(field.value)
+      ) {
+
+        errors[name] =
+          'Invalid email address';
+
+      }
+
+    });
+
+    return errors;
+
+  }
+
+  static showErrors(errors, form) {
+
+    this.clearErrors(form);
+
+    Object.keys(errors).forEach(key => {
+
+      const field =
+        form.querySelector(`[name="${key}"]`) ||
+        form.querySelector(`#${key}`);
+
+      if (!field) return;
+
+      field.style.borderColor =
+        'var(--danger)';
+
+      field.title = errors[key];
+
+    });
+
+  }
+
+  static clearErrors(form) {
+
+    if (!form) return;
+
+    const fields =
+      form.querySelectorAll(
+        'input, textarea, select'
+      );
+
+    fields.forEach(field => {
+
+      field.style.borderColor = '';
+
+      field.title = '';
+
+    });
+
+  }
+
+}
+
+window.FormValidator = FormValidator;
+
+/* ================================================
+   API HELPER
+   ================================================ */
+
+class API {
+
+  static async fetch(url, options = {}) {
+
+    try {
+
+      const response = await fetch(url, options);
+
+      if (!response.ok) {
+
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      }
+
+      const contentType =
+        response.headers.get('content-type');
+
+      if (
+        contentType &&
+        contentType.includes('application/json')
+      ) {
+
+        return await response.json();
+
+      }
+
+      return await response.text();
+
+    } catch (error) {
+
+      console.error(error);
+
+      throw error;
+
+    }
+
+  }
+
+  static async post(url, data = {}) {
+
+    const formData = new FormData();
+
+    Object.keys(data).forEach(key => {
+
+      formData.append(key, data[key]);
+
+    });
+
+    try {
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+
+      return await response.text();
+
+    } catch (error) {
+
+      console.error(error);
+
+      throw error;
+
+    }
+
+  }
+
+  static sanitize(text) {
+
+    const div =
+      document.createElement('div');
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+  }
+
+}
+
+window.API = API;
+
+/* ================================================
+   DOM HELPER
+   ================================================ */
+
+class DOM {
+
+  static query(selector, parent = document) {
+
+    return parent.querySelector(selector);
+
+  }
+
+  static queryAll(selector, parent = document) {
+
+    return parent.querySelectorAll(selector);
+
+  }
+
+  static create(tag, options = {}) {
+
+    const el =
+      document.createElement(tag);
+
+    if (options.class) {
+      el.className = options.class;
+    }
+
+    if (options.id) {
+      el.id = options.id;
+    }
+
+    if (options.text) {
+      el.textContent = options.text;
+    }
+
+    if (options.html) {
+      el.innerHTML = options.html;
+    }
+
+    return el;
+
+  }
+
+  static remove(el) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (element) {
+      element.remove();
+    }
+
+  }
+
+  static show(el) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (!element) return;
+
+    element.classList.remove('hidden');
+
+  }
+
+  static hide(el) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (!element) return;
+
+    element.classList.add('hidden');
+
+  }
+
+  static addClass(el, className) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (element) {
+      element.classList.add(className);
+    }
+
+  }
+
+  static removeClass(el, className) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (element) {
+      element.classList.remove(className);
+    }
+
+  }
+
+  static toggleClass(el, className) {
+
+    const element =
+      typeof el === 'string'
+        ? this.query(el)
+        : el;
+
+    if (element) {
+      element.classList.toggle(className);
+    }
+
+  }
+
+}
+
+window.DOM = DOM;
+
+/* ================================================
+   SIDEBAR MANAGER
+   ================================================ */
+
+class SidebarManager {
+
+  constructor() {
+
+    window.addEventListener(
+      'DOMContentLoaded',
+      () => {
+
+        this.sidebar =
+          document.querySelector('.sidebar');
+
+        this.toggle =
+          document.querySelector('.sidebar-toggle');
+
+        this.layout =
+          document.querySelector('.main-layout');
+
+        this.init();
+
+      }
+    );
+
+  }
+
+  init() {
+
+    if (!this.toggle) return;
+
+    this.toggle.addEventListener('click', e => {
+
+      e.stopPropagation();
+
+      this.toggleSidebar();
+
+    });
+
+    document.addEventListener('click', e => {
+
+      this.handleOutsideClick(e);
+
+    });
+
+  }
+
+  toggleSidebar() {
+
+    if (this.sidebar) {
+
+      this.sidebar.classList.toggle('open');
+
+    }
+
+    if (this.layout) {
+
+      this.layout.classList.toggle('sidebar-open');
+
+    }
+
+  }
+
+  handleOutsideClick(e) {
+
+    if (!this.sidebar || !this.toggle) return;
+
+    const clickedInside =
+      this.sidebar.contains(e.target) ||
+      this.toggle.contains(e.target);
+
+    if (!clickedInside) {
+
+      this.closeSidebar();
+
+    }
+
+  }
+
+  closeSidebar() {
+
+    if (this.sidebar) {
+
+      this.sidebar.classList.remove('open');
+
+    }
+
+    if (this.layout) {
+
+      this.layout.classList.remove('sidebar-open');
+
+    }
+
+  }
+
+}
+
+window.sidebarManager =
+  new SidebarManager();
+
+/* ================================================
+   MODAL MANAGER
+   ================================================ */
+
+class ModalManager {
+
+  static open(modalId) {
+
+    const modal =
+      document.getElementById(modalId);
+
+    if (!modal) {
+
+      console.error(
+        `Modal not found: ${modalId}`
+      );
+
+      return;
+
+    }
+
+    modal.classList.add('show');
+
+    document.body.style.overflow = 'hidden';
+
+  }
+
+  static close(modalId) {
+
+    const modal =
+      document.getElementById(modalId);
+
+    if (!modal) return;
+
+    modal.classList.remove('show');
+
+    document.body.style.overflow = '';
+
+  }
+
+  static closeAll() {
+
+    document
+      .querySelectorAll('.modal')
+      .forEach(modal => {
+
+        modal.classList.remove('show');
+
+      });
+
+    document.body.style.overflow = '';
+
+  }
+
+  static setupCloseButtons() {
+
+    document
+      .querySelectorAll('.modal .close')
+      .forEach(btn => {
+
+        btn.addEventListener('click', () => {
+
+          const modal =
+            btn.closest('.modal');
+
+          if (modal) {
+
+            modal.classList.remove('show');
+
+          }
+
+          document.body.style.overflow = '';
+
+        });
+
+      });
+
+  }
+
+  static setupBackdropClose() {
+
+    document.addEventListener('click', e => {
+
+      if (
+        e.target.classList.contains('modal')
+      ) {
+
+        e.target.classList.remove('show');
+
+        document.body.style.overflow = '';
+
+      }
+
+    });
+
+  }
+
+}
+
+window.ModalManager = ModalManager;
+
+/* ================================================
+   DATE HELPER
+   ================================================ */
+
+class DateHelper {
+
+  static format(date) {
+
+    if (typeof date === 'string') {
+
+      date = new Date(date);
+
+    }
+
+    const d =
+      String(date.getDate()).padStart(2, '0');
+
+    const m =
+      String(date.getMonth() + 1)
+      .padStart(2, '0');
+
+    const y = date.getFullYear();
+
+    return `${d}-${m}-${y}`;
+
+  }
+
+  static isToday(dateStr) {
+
+    const today =
+      new Date().toDateString();
+
+    const date =
+      new Date(dateStr).toDateString();
+
+    return today === date;
+
+  }
+
+  static daysAgo(dateStr) {
+
+    const now = new Date();
+
+    const date = new Date(dateStr);
+
+    const diff =
+      Math.floor(
+        (now - date) /
+        (1000 * 60 * 60 * 24)
+      );
+
+    if (diff === 0) {
+      return 'Today';
+    }
+
+    if (diff === 1) {
+      return 'Yesterday';
+    }
+
+    if (diff < 7) {
+      return `${diff} days ago`;
+    }
+
+    return this.format(date);
+
+  }
+
+}
+
+window.DateHelper = DateHelper;
+
+/* ================================================
+   STORAGE
+   ================================================ */
+
+class Storage {
+
+  static set(key, value) {
+
+    try {
+
+      localStorage.setItem(
+        key,
+        JSON.stringify(value)
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+
+  static get(key) {
+
+    try {
+
+      const item =
+        localStorage.getItem(key);
+
+      return item
+        ? JSON.parse(item)
+        : null;
+
+    } catch (error) {
+
+      console.error(error);
+
+      return null;
+
+    }
+
+  }
+
+  static remove(key) {
+
+    localStorage.removeItem(key);
+
+  }
+
+  static clear() {
+
+    localStorage.clear();
+
+  }
+
+}
+
+window.Storage = Storage;
+
+/* ================================================
+   ESC CLOSE
+   ================================================ */
+
+document.addEventListener('keydown', e => {
+
+  if (e.key === 'Escape') {
+
+    ModalManager.closeAll();
+
+  }
+
+});
+
+/* ================================================
+   GLOBAL INIT
+   ================================================ */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  () => {
+
+    ModalManager.setupCloseButtons();
+
+    ModalManager.setupBackdropClose();
+
+  }
+);
+
+===== includes\footer.php =====
   </div> <!-- end main-layout -->
 </body>
 </html>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\header.php =====
+===== includes\header.php =====
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Modern Email CRM Dashboard">
 	<title>Email CRM Dashboard</title>
-	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="assets/css/modern.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+	<script src="assets/js/utils.js"></script>
 </head>
 <body>
 <div class="main-layout">
+<button class="sidebar-toggle" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\sidebar.php =====
+===== includes\sidebar.php =====
 <div class="sidebar">
 	<div class="logo">
-		<h2>Email CRM</h2>
+		<h2><i class="fa fa-envelope"></i> Email CRM</h2>
 	</div>
 	<ul class="menu">
-		<li><a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF'])=='dashboard.php'?'active':'' ?>"><i class="fa fa-chart-bar"></i> Dashboard</a></li>
-		<li><a href="templates.php" class="<?= basename($_SERVER['PHP_SELF'])=='templates.php'?'active':'' ?>"><i class="fa fa-file-alt"></i> Templates</a></li>
-		<li><a href="sent_emails.php" class="<?= basename($_SERVER['PHP_SELF'])=='sent_emails.php'?'active':'' ?>"><i class="fa fa-paper-plane"></i> Sent Emails</a></li>
+		<li><a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF'])=='dashboard.php'?'active':'' ?>" title="Dashboard"><i class="fa fa-chart-bar"></i> <span>Dashboard</span></a></li>
+		<li><a href="templates.php" class="<?= basename($_SERVER['PHP_SELF'])=='templates.php'?'active':'' ?>" title="Templates"><i class="fa fa-file-alt"></i> <span>Templates</span></a></li>
+		<li><a href="sent_emails.php" class="<?= basename($_SERVER['PHP_SELF'])=='sent_emails.php'?'active':'' ?>" title="Sent Emails"><i class="fa fa-paper-plane"></i> <span>Sent Emails</span></a></li>
 	</ul>
 </div>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\includes\topbar.php =====
+===== includes\topbar.php =====
 <div class="topbar">
+
     <h2><?php echo $pageTitle; ?></h2>
+
     <div class="topbar-actions">
-        <button class="btn primary-btn" onclick="openSendPopup()">
-            <i class="fa fa-envelope"></i> Send Email
+
+        <button
+        type="button"
+        class="icon-btn"
+        id="themeToggle"
+        aria-label="Toggle dark mode"
+        title="Toggle dark mode">
+            <i class="fa fa-moon"></i>
         </button>
+
+        <button
+        type="button"
+        class="btn primary-btn"
+        id="sendEmailBtn"
+        aria-label="Send new email">
+
+            <i class="fa fa-envelope"></i>
+            Send Email
+
+        </button>
+
     </div>
-</div>
-
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\dashboard.js =====
-let emails = [];
-
-fetch('api/get_sent_emails.php')
-.then(res => res.json())
-.then(data => {
-
-emails = data;
-
-renderStats();
-renderRecent(data);
-renderCharts(data);
-
-});
-
-function renderStats(){
-
-document.getElementById('totalEmails').innerText = emails.length;
-
-let companies = [...new Set(emails.map(e=>e.company))];
-document.getElementById('totalCompanies').innerText = companies.length;
-
-let positions = [...new Set(emails.map(e=>e.position))];
-document.getElementById('totalPositions').innerText = positions.length;
-
-document.getElementById('todayEmails').innerText = emails.length;
-
-}
-
-function renderRecent(data){
-
-let html='';
-
-data.slice(0,10).forEach(email=>{
-
-html += `
-<div class="email-card">
-
-<h3>${email.company}</h3>
-
-<p>${email.title}</p>
-<p>${email.position}</p>
-<p>${email.to_email}</p>
-<p>${email.status}</p>
-<p>${email.date}</p>
 
 </div>
-`;
 
-});
-
-document.getElementById('recentEmails').innerHTML = html;
-
-}
-
-function renderCharts(data){
-
-let companyCounts = {};
-
-data.forEach(e=>{
-companyCounts[e.company] =
-(companyCounts[e.company] || 0)+1;
-});
-
-new Chart(document.getElementById('companyChart'),{
-type:'bar',
-data:{
-labels:Object.keys(companyCounts),
-datasets:[{
-label:'Emails',
-data:Object.values(companyCounts)
-}]
-}
-});
-
-}
-
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\send.js =====
-function openSendPopup(){
-
-fetch('send_popup.php')
-.then(res=>res.text())
-.then(html=>{
-
-document.body.insertAdjacentHTML('beforeend',html);
-
-loadCompanies();
-
-document.getElementById('sendModal').style.display='flex';
-
-});
-
-}
-
-function closeSendPopup(){
-
-document.getElementById('sendModal').remove();
-
-}
-
-function loadCompanies(){
-
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
-
-let companies = [...new Set(data.map(t=>t.company))];
-
-let select = document.getElementById('sendCompany');
-
-select.innerHTML = '';
-
-companies.forEach(company=>{
-
-select.innerHTML += `
-<option value="${company}">
-${company}
-</option>
-`;
-
-});
-
-loadPositions();
-
-});
-
-}
-
-function loadPositions(){
-
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
-
-let company =
-document.getElementById('sendCompany').value;
-
-let filtered =
-data.filter(t=>t.company==company);
-
-let select =
-document.getElementById('sendPosition');
-
-select.innerHTML='';
-
-filtered.forEach(t=>{
-
-select.innerHTML += `
-<option value="${t.position}">
-${t.position}
-</option>
-`;
-
-});
-
-});
-
-}
-
-function sendEmail(){
-
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
-
-let company =
-document.getElementById('sendCompany').value;
-
-let position =
-document.getElementById('sendPosition').value;
-
-let template =
-data.find(t=>
-t.company==company &&
-t.position==position
-);
-
-let to =
-document.getElementById('toEmail').value;
-
-let saveData = new FormData();
-
-saveData.append('to_email',to);
-saveData.append('company',company);
-saveData.append('title',template.title);
-saveData.append('position',position);
-saveData.append('subject',template.subject);
-
-fetch('api/save_sent_email.php',{
-method:'POST',
-body:saveData
-})
-.then(()=>{
-
-let url =
-`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(template.subject)}&body=${encodeURIComponent(template.body)}`;
-
-window.open(url,'_blank');
-
-closeSendPopup();
-
-});
-
-});
-
-}
-
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\sent_emails.js =====
-fetch('api/get_sent_emails.php')
-.then(res=>res.json())
-.then(data=>{
-
-renderEmails(data);
-
-});
-
-function renderEmails(data){
-
-let html='';
-
-data.forEach(email=>{
-
-html += `
-<div class="email-card">
-
-<h3>${email.company}</h3>
-
-<p>${email.title}</p>
-<p>${email.position}</p>
-<p>${email.to_email}</p>
-<p>${email.subject}</p>
-<p>${email.status}</p>
-<p>${email.date}</p>
-
-</div>
-`;
-
-});
-
-document.getElementById('sentEmailsContainer').innerHTML=html;
-
-}
-
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\js\templates.js =====
-let templates = [];
-
-function loadTemplates(){
-
-fetch('api/get_templates.php')
-.then(res=>res.json())
-.then(data=>{
-
-templates = data;
-
-renderTemplates();
-
-});
-
-}
-
-function renderTemplates(){
-
-let html='';
-
-templates.forEach((t,index)=>{
-
-html += `
-<div class="email-card">
-
-<h3>${t.title}</h3>
-
-<p>${t.company}</p>
-<p>${t.position}</p>
-<p>${t.date}</p>
-
-<div class="card-actions">
-
-<button class="icon-btn"
-onclick="editTemplate(${index})">
-<i class="fa fa-edit"></i>
-</button>
-
-<button class="icon-btn"
-onclick="deleteTemplate(${index})">
-<i class="fa fa-trash"></i>
-</button>
-
-</div>
-
-</div>
-`;
-
-});
-
-document.getElementById('templatesContainer').innerHTML = html;
-
-}
-
-function openTemplateModal(){
-
-document.getElementById('templateModal').style.display='flex';
-
-}
-
-function closeTemplateModal(){
-
-document.getElementById('templateModal').style.display='none';
-
-}
-
-function editTemplate(index){
-
-let t = templates[index];
-
-openTemplateModal();
-
-document.getElementById('templateIndex').value=index;
-document.getElementById('title').value=t.title;
-document.getElementById('company').value=t.company;
-document.getElementById('position').value=t.position;
-document.getElementById('subject').value=t.subject;
-document.getElementById('body').value=t.body;
-
-}
-
-function saveTemplate(){
-
-let formData = new FormData();
-
-formData.append('index',
-document.getElementById('templateIndex').value);
-
-formData.append('title',
-document.getElementById('title').value);
-
-formData.append('company',
-document.getElementById('company').value);
-
-formData.append('position',
-document.getElementById('position').value);
-
-formData.append('subject',
-document.getElementById('subject').value);
-
-formData.append('body',
-document.getElementById('body').value);
-
-fetch('api/save_template.php',{
-method:'POST',
-body:formData
-})
-.then(res=>res.text())
-.then(()=>{
-
-closeTemplateModal();
-loadTemplates();
-
-});
-
-}
-
-function deleteTemplate(index){
-
-let formData = new FormData();
-
-formData.append('index',index);
-
-fetch('api/delete_template.php',{
-method:'POST',
-body:formData
-})
-.then(()=>loadTemplates());
-
-}
-
-loadTemplates();
-
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\dashboard.php =====
+===== dashboard.php =====
 <?php
 $pageTitle = "Dashboard";
 include 'includes/header.php';
@@ -721,174 +3369,114 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/topbar.php'; ?>
 
-<div class="stats-grid">
-
+<div class="stats-grid" id="statsGrid">
     <div class="stat-card">
-        <h3 id="totalEmails">0</h3>
+        <h3>0</h3>
         <p>Total Emails Sent</p>
     </div>
-
     <div class="stat-card">
-        <h3 id="totalCompanies">0</h3>
+        <h3>0</h3>
         <p>Total Companies</p>
     </div>
-
     <div class="stat-card">
-        <h3 id="totalPositions">0</h3>
+        <h3>0</h3>
         <p>Total Positions</p>
     </div>
-
     <div class="stat-card">
-        <h3 id="todayEmails">0</h3>
+        <h3>0</h3>
         <p>Today's Emails</p>
     </div>
-
 </div>
 
 <div class="charts-grid">
-
     <div class="chart-card">
+        <h3>Emails by Company (Top 10)</h3>
         <canvas id="companyChart"></canvas>
     </div>
 
     <div class="chart-card">
-        <canvas id="dayChart"></canvas>
+        <h3>Daily Email Volume (Last 30 Days)</h3>
+        <canvas id="dateChart"></canvas>
     </div>
-
 </div>
 
 <div class="search-box">
     <input type="text" id="searchInput"
-    placeholder="Search company, title, position, email">
+    placeholder="Search company, title, position, email...">
 </div>
 
 <div id="recentEmails" class="cards-grid"></div>
 
 </div>
 
-<script src="js/dashboard.js"></script>
+<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\send_popup.php =====
-<div class="popup" id="sendPopup">
+===== send_popup.php =====
+<div class="modal show" id="sendModal">
 
-    <div class="popup-content send-popup">
+    <div class="modal-content send-popup">
 
-        <div class="popup-header">
-
-            <div>
-                <h2>Send Email</h2>
-                <p>Select company and position</p>
-            </div>
-
-            <span class="close-popup"
-            onclick="closeSendPopup()">
-                &times;
-            </span>
-
+        <div class="modal-header">
+            <h2>Send Email</h2>
+            <button type="button" class="close" aria-label="Close">&times;</button>
         </div>
 
-        <div class="popup-body">
+        <form onsubmit="return false;">
 
             <div class="form-group">
-
-                <label>To Email</label>
-
+                <label for="toEmail">Recipient Email *</label>
                 <input
                 type="email"
                 id="toEmail"
-                placeholder="Enter candidate email">
-
+                placeholder="candidate@example.com"
+                required>
             </div>
 
             <div class="form-group">
-
-                <label>Select Company</label>
-
-                <select
-                id="companySelect"
-                onchange="loadPositions()">
-
-                    <option value="">
-                        Select Company
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Select Position</label>
-
-                <select
-                id="positionSelect"
-                onchange="loadTemplate()">
-
-                    <option value="">
-                        Select Position
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="template-preview">
-
-                <h3>Email Preview</h3>
-
-                <div class="preview-box">
-<div class="modal" id="sendPopup">
-    <div class="modal-content send-popup">
-        <div class="popup-header">
-            <div>
-                <h2>Send Email</h2>
-                <p>Select company and position</p>
-            </div>
-            <span class="close" onclick="closeSendPopup()">&times;</span>
-        </div>
-        <div class="popup-body">
-            <div class="form-group">
-                <label>To Email</label>
-                <input type="email" id="toEmail" placeholder="Enter candidate email">
-            </div>
-            <div class="form-group">
-                <label>Select Company</label>
-                <select id="companySelect" onchange="loadPositions()">
+                <label for="sendCompany">Company *</label>
+                <select id="sendCompany" required>
                     <option value="">Select Company</option>
                 </select>
             </div>
+
             <div class="form-group">
-                <label>Select Position</label>
-                <select id="positionSelect" onchange="loadTemplate()">
+                <label for="sendPosition">Position *</label>
+                <select id="sendPosition" required>
                     <option value="">Select Position</option>
                 </select>
             </div>
-            <div class="template-preview">
-                <h3>Email Preview</h3>
-                <div class="preview-box">
-                    <p><strong>Subject:</strong> <span id="previewSubject">No template selected</span></p>
-                    <div id="previewBody">Email body preview will appear here...</div>
+
+            <div style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: var(--spacing-lg); margin: var(--spacing-lg) 0; border: 1px solid var(--border-light);">
+                <h4 style="margin-bottom: var(--spacing-md); font-size: 14px;">Preview</h4>
+                <div style="margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--border-light);">
+                    <p style="color: var(--text-tertiary); font-size: 12px; margin-bottom: var(--spacing-xs);">Subject:</p>
+                    <p id="previewSubject" style="font-weight: 500; color: var(--text-primary);">Select a template to see preview</p>
+                </div>
+                <div>
+                    <p style="color: var(--text-tertiary); font-size: 12px; margin-bottom: var(--spacing-xs);">Body:</p>
+                    <div id="previewBody" style="font-size: 13px; color: var(--text-secondary); max-height: 200px; overflow-y: auto;"></div>
                 </div>
             </div>
-        </div>
-        <div class="popup-footer">
-            <button class="secondary-btn" onclick="closeSendPopup()">Cancel</button>
-            <button class="primary-btn" onclick="sendEmail()"><i class="fa fa-paper-plane"></i> Send Email</button>
-        </div>
-    </div>
-</div>
-<script>
-function openSendPopup() {
-    document.getElementById('sendPopup').classList.add('show');
-}
-function closeSendPopup() {
-    document.getElementById('sendPopup').classList.remove('show');
-}
-</script>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\sent_emails.php =====
+            <button
+            type="button"
+            class="btn primary-btn"
+            id="sendBtn"
+            style="width: 100%;">
+                <i class="fa fa-paper-plane"></i>
+                Send Email & Open Outlook
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+===== sent_emails.php =====
 <?php
 $pageTitle = "Sent Emails";
 include 'includes/header.php';
@@ -899,17 +3487,20 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/topbar.php'; ?>
 
-<div class="filters">
+<div style="margin-bottom: var(--spacing-lg); display: flex; gap: var(--spacing-md); align-items: center; flex-wrap: wrap;">
 
-<input type="text" id="emailSearch"
-placeholder="Search company, position, title">
+    <input type="text" id="emailSearch" placeholder="Search company, position, title...">
 
-<select id="companyFilter"></select>
+    <select id="companyFilter"></select>
 
-<select id="statusFilter">
-<option value="">All Status</option>
-<option value="Sent">Sent</option>
-</select>
+    <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Sent">Sent</option>
+    </select>
+
+    <button class="btn secondary-btn" onclick="exportToCSV()">
+        <i class="fa fa-download"></i> Export CSV
+    </button>
 
 </div>
 
@@ -917,11 +3508,12 @@ placeholder="Search company, position, title">
 
 </div>
 
-<script src="js/sent_emails.js"></script>
+<script src="assets/js/sent_emails.js"></script>
+<script src="assets/js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>
 
-===== C:\Users\abdul\AndroidStudioProjects\email_crm\email_crm\templates.php =====
+===== templates.php =====
 <?php
 $pageTitle = "Templates";
 include 'includes/header.php';
@@ -932,12 +3524,14 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/topbar.php'; ?>
 
-<div class="template-top-actions">
+<div style="margin-bottom: var(--spacing-lg); display: flex; gap: var(--spacing-md); align-items: center;">
 
-<button class="btn primary-btn" onclick="openTemplateModal()">
-    <i class="fa fa-plus"></i>
-    Add Template
-</button>
+    <button class="btn primary-btn" onclick="openTemplateModal()">
+        <i class="fa fa-plus"></i>
+        Add Template
+    </button>
+
+    <input type="text" id="templateSearch" placeholder="Search templates..." style="flex: 1; max-width: 400px;">
 
 </div>
 
@@ -945,31 +3539,62 @@ include 'includes/sidebar.php';
 
 </div>
 
-
+<!-- TEMPLATE MODAL -->
 <div class="modal" id="templateModal">
     <div class="modal-content">
-        <span class="close" onclick="closeTemplateModal()">&times;</span>
-        <h2>Template</h2>
-        <input type="hidden" id="templateIndex">
-        <input type="text" id="title" placeholder="Title">
-        <input type="text" id="company" placeholder="Company">
-        <input type="text" id="position" placeholder="Position">
-        <input type="text" id="subject" placeholder="Subject">
-        <textarea id="body" rows="10" placeholder="Email Body"></textarea>
-        <button class="btn primary-btn" onclick="saveTemplate()">Save Template</button>
+        <div class="modal-header">
+            <h2>Create Template</h2>
+            <button type="button" class="close" onclick="closeTemplateModal()" aria-label="Close">&times;</button>
+        </div>
+
+        <form id="templateForm" onsubmit="return false;">
+
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" placeholder="Template title" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                <div class="form-group">
+                    <label for="company">Company *</label>
+                    <input type="text" id="company" placeholder="Company name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position *</label>
+                    <input type="text" id="position" placeholder="Job position" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject *</label>
+                <input type="text" id="subject" placeholder="Email subject" required>
+            </div>
+
+            <div class="form-group">
+                <label for="editor">Email Body</label>
+                <div class="quill-wrapper">
+                    <div id="editor"></div>
+                </div>
+            </div>
+
+            <input type="hidden" id="templateIndex">
+
+            <div style="display: flex; gap: var(--spacing-md); justify-content: flex-end; padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light);">
+                <button type="button" class="btn secondary-btn" onclick="closeTemplateModal()">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn primary-btn" id="saveTemplateBtn" onclick="saveTemplate()">
+                    <i class="fa fa-save"></i> Save Template
+                </button>
+            </div>
+
+        </form>
     </div>
 </div>
 
-<script>
-function openTemplateModal() {
-    document.getElementById('templateModal').classList.add('show');
-}
-function closeTemplateModal() {
-    document.getElementById('templateModal').classList.remove('show');
-}
-</script>
-
-<script src="js/templates.js"></script>
+<script src="assets/js/templates.js"></script>
+<script src="assets/js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>
 

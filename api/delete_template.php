@@ -1,18 +1,30 @@
 <?php
+require_once '../api/config.php';
 
 $file = '../data/templates.json';
 
-$data = json_decode(file_get_contents($file), true);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $index = isset($_POST['index']) ? (int)$_POST['index'] : -1;
 
-if(!$data){
-$data = [];
+    if ($index < 0) {
+        sendError('Invalid index');
+        exit;
+    }
+
+    $data = getDataFile($file);
+
+    if (!isset($data[$index])) {
+        sendError('Template not found', 404);
+        exit;
+    }
+
+    unset($data[$index]);
+    $data = array_values($data);
+
+    if (saveDataFile($file, $data)) {
+        sendSuccess('Template deleted successfully');
+    } else {
+        sendError('Failed to delete template', 500);
+    }
 }
-
-unset($data[$_POST['index']]);
-
-$data = array_values($data);
-
-file_put_contents($file,
-json_encode($data, JSON_PRETTY_PRINT));
-
-echo "deleted";
+?>

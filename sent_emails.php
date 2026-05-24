@@ -8,17 +8,20 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/topbar.php'; ?>
 
-<div class="filters">
+<div style="margin-bottom: var(--spacing-lg); display: flex; gap: var(--spacing-md); align-items: center; flex-wrap: wrap;">
 
-<input type="text" id="emailSearch"
-placeholder="Search company, position, title">
+    <input type="text" id="emailSearch" placeholder="Search company, position, title...">
 
-<select id="companyFilter"></select>
+    <!-- <select id="companyFilter"></select> -->
 
-<select id="statusFilter">
-<option value="">All Status</option>
-<option value="Sent">Sent</option>
-</select>
+    <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Sent">Sent</option>
+    </select>
+
+    <button class="btn secondary-btn" onclick="exportToCSV()">
+        <i class="fa fa-download"></i> Export CSV
+    </button>
 
 </div>
 
@@ -26,7 +29,7 @@ placeholder="Search company, position, title">
 
 </div>
 
-<script src="js/sent_emails.js"></script>
-<script src="js/send.js"></script>
+<script src="assets/js/sent_emails.js"></script>
+<script src="assets/js/send.js"></script>
 
 <?php include 'includes/footer.php'; ?>
