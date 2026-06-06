@@ -1,4 +1,4 @@
-===== api\config.php =====
+﻿===== FILE: .\api\config.php =====
 <?php
 // ================================================
 // SECURITY FUNCTIONS
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET
 }
 ?>
 
-===== api\delete_template.php =====
+===== FILE: .\api\delete_template.php =====
 <?php
 require_once '../api/config.php';
 
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-===== api\get_sent_emails.php =====
+===== FILE: .\api\get_sent_emails.php =====
 <?php
 require_once '../api/config.php';
 
@@ -100,7 +100,7 @@ $file = '../data/sent_emails.json';
 $data = getDataFile($file);
 sendJSON($data);
 
-===== api\get_templates.php =====
+===== FILE: .\api\get_templates.php =====
 <?php
 require_once '../api/config.php';
 
@@ -112,7 +112,7 @@ $file = '../data/templates.json';
 $data = getDataFile($file);
 sendJSON($data);
 
-===== api\save_sent_email.php =====
+===== FILE: .\api\save_sent_email.php =====
 <?php
 require_once '../api/config.php';
 
@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-===== api\save_template.php =====
+===== FILE: .\api\save_template.php =====
 <?php
 require_once '../api/config.php';
 
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-===== assets\css\modern.css =====
+===== FILE: .\assets\css\modern.css =====
 /* ================================================
    MODERN EMAIL CRM DASHBOARD - DESIGN SYSTEM
    Professional SaaS UI with Dark Mode Support
@@ -574,7 +574,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
-  white-space: nowrap;
+  white-space: normal;
+  
 }
 
 .btn:hover {
@@ -700,6 +701,8 @@ body {
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
   animation: fadeIn 0.4s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .email-card:hover {
@@ -739,8 +742,13 @@ body {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
 }
-
+.card-actions .btn {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+  justify-content: center;
+}
 /* ================================================
    GRIDS
    ================================================ */
@@ -754,7 +762,7 @@ body {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
 }
 
@@ -772,6 +780,7 @@ body {
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   animation: fadeIn 0.4s ease;
+  min-height: 360px;
 }
 
 .chart-card h3 {
@@ -782,6 +791,7 @@ body {
 }
 
 .chart-card canvas {
+  display: block;
   width: 100% !important;
   height: 280px !important;
 }
@@ -874,77 +884,112 @@ textarea {
 /* ================================================
    MODAL
    ================================================ */
-
-.modal{
+body.modal-open {
+  overflow: hidden;
+}
+.modal {
   position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background: rgba(0,0,0,0.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:99999;
-  padding:20px;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
 }
 
 .modal.show{
   display:flex !important;
 }
 
-.modal-content{
-  width:100%;
-  max-width:700px;
-  background:#fff;
-  border-radius:16px;
-  padding:24px;
-  max-height:90vh;
-  overflow-y:auto;
-  animation:scaleIn .2s ease;
+.modal-content {
+  width: 100%;
+  max-width: 700px;
+  background: var(--bg-primary);
+  border-radius: 16px;
+  padding: 24px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;              /* keep scrolling */
+  overflow-x: hidden;
+  animation: scaleIn .2s ease;
+  -ms-overflow-style: none;      /* IE/Edge */
+  scrollbar-width: none;         /* Firefox */
 }
 
-[data-theme="dark"] .modal-content{
-  background:#0f172a;
+.modal-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;                 /* Chrome/Safari */
+}
+[data-theme="dark"] .modal-content {
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
+  justify-content: space-between;
+  padding: 20px 24px;
+  margin: 0;
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border-light);
-  position: relative;  /* ADD THIS LINE */
 }
 
 .modal-header h2 {
+  margin: 0;
   font-size: 20px;
   font-weight: 700;
 }
 
 .close {
-  position: absolute;
-  top: var(--spacing-lg);
-  right: var(--spacing-lg);
+  position: static;
   font-size: 24px;
   cursor: pointer;
   color: var(--text-secondary);
   transition: var(--transition-fast);
   border: none;
   background: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
-.close:hover {
+
+
+.close:hover,
+.close:focus {
   background: var(--bg-secondary);
   color: var(--text-primary);
   transform: rotate(90deg);
+  outline: none;
+}
+@media (max-width: 768px) {
+  .modal {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .modal-content {
+    margin-top: 12px;
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+   
+  }
+
+  .modal-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+  }
 }
 
 /* ================================================
@@ -1180,21 +1225,46 @@ textarea {
   }
   
   .email-card {
-    padding: var(--spacing-md);
-  }
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  animation: fadeIn 0.4s ease;
+  min-width: 0;
+  overflow: hidden;
+}
   
   .btn {
-    width: 100%;
-    justify-content: center;
-  }
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  white-space: normal;
+  
+}
   
   .card-actions {
-    flex-direction: column;
-  }
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
   
   .card-actions .btn {
-    width: 100%;
-  }
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+  justify-content: center;
+}
   
   .modal-content {
     padding: var(--spacing-lg);
@@ -1229,12 +1299,15 @@ textarea {
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 
-===== assets\js\dashboard.js =====
+===== FILE: .\assets\js\dashboard.js =====
 /* ================================================
    DASHBOARD - Data Management
    ================================================ */
 
 let emails = [];
+let companyChartInstance = null;
+let dateChartInstance = null;
+
 let stats = {
   totalEmails: 0,
   totalCompanies: 0,
@@ -1243,60 +1316,87 @@ let stats = {
   thisWeekEmails: 0
 };
 
-/* ================================================
-   FETCH & INITIALIZE
-   ================================================ */
-
 document.addEventListener('DOMContentLoaded', async () => {
+  await initDashboard();
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('keyup', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const filtered = emails.filter(email =>
+        (email.company || '').toLowerCase().includes(query) ||
+        (email.position || '').toLowerCase().includes(query) ||
+        (email.title || '').toLowerCase().includes(query) ||
+        (email.to_email || '').toLowerCase().includes(query)
+      );
+      renderRecent(filtered);
+    });
+  }
+});
+
+async function initDashboard() {
   try {
     const response = await fetch('api/get_sent_emails.php');
     const data = await response.json();
 
     emails = Array.isArray(data) ? data : (data.data || []);
-    
+
     calculateStats();
     renderStats();
-    renderRecent();
+    renderRecent(emails);
     renderCharts();
   } catch (error) {
     console.error('Error loading emails:', error);
-    toast.error('Failed to load dashboard data');
+    if (window.toast) toast.error('Failed to load dashboard data');
   }
-});
+}
 
-/* ================================================
-   STATISTICS CALCULATION
-   ================================================ */
+function parseEmailDate(dateString) {
+  if (!dateString) return null;
+
+  const rawDate = dateString.split(' ')[0];
+  const [dd, mm, yyyy] = rawDate.split('-').map(Number);
+
+  if (!dd || !mm || !yyyy) return null;
+
+  return new Date(yyyy, mm - 1, dd);
+}
+
+function formatDateKey(dateString) {
+  const date = parseEmailDate(dateString);
+  if (!date) return null;
+
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 function calculateStats() {
   stats.totalEmails = emails.length;
+  stats.totalCompanies = new Set(emails.map(e => e.company).filter(Boolean)).size;
+  stats.totalPositions = new Set(emails.map(e => e.position).filter(Boolean)).size;
 
-  const companies = new Set(emails.map(e => e.company));
-  stats.totalCompanies = companies.size;
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const positions = new Set(emails.map(e => e.position));
-  stats.totalPositions = positions.size;
-
-  const today = new Date().toLocaleDateString('en-GB');
-  stats.todayEmails = emails.filter(e => {
-    const emailDate = new Date(e.date.split(' ')[0].split('-').reverse().join('-')).toLocaleDateString('en-GB');
-    return emailDate === today;
-  }).length;
+  stats.todayEmails = emails.filter(e => formatDateKey(e.date) === todayKey).length;
 
   const weekAgo = new Date();
+  weekAgo.setHours(0, 0, 0, 0);
   weekAgo.setDate(weekAgo.getDate() - 7);
+
   stats.thisWeekEmails = emails.filter(e => {
-    const emailDate = new Date(e.date.split(' ')[0].split('-').reverse().join('-'));
-    return emailDate >= weekAgo;
+    const d = parseEmailDate(e.date);
+    return d && d >= weekAgo;
   }).length;
 }
 
-/* ================================================
-   RENDER STATISTICS
-   ================================================ */
-
 function renderStats() {
-  const statsHtml = `
+  const statsGrid = document.getElementById('statsGrid');
+  if (!statsGrid) return;
+
+  statsGrid.innerHTML = `
     <div class="stat-card">
       <h3>${stats.totalEmails}</h3>
       <p>Total Emails Sent</p>
@@ -1318,21 +1418,15 @@ function renderStats() {
       <p>This Week</p>
     </div>
   `;
-
-  const statsGrid = document.getElementById('statsGrid');
-  if (statsGrid) {
-    statsGrid.innerHTML = statsHtml;
-  }
 }
 
-/* ================================================
-   RENDER RECENT EMAILS
-   ================================================ */
+function renderRecent(data = emails) {
+  const recentContainer = document.getElementById('recentEmails');
+  if (!recentContainer) return;
 
-function renderRecent() {
   let html = '';
 
-  if (emails.length === 0) {
+  if (!data.length) {
     html = `
       <div class="empty-state">
         <div class="empty-state-icon"><i class="fa fa-inbox"></i></div>
@@ -1341,67 +1435,64 @@ function renderRecent() {
       </div>
     `;
   } else {
-    emails.slice(0, 8).forEach(email => {
+    data.slice(0, 8).forEach(email => {
       html += `
         <div class="email-card">
-          <h3>${email.company}</h3>
-          <p><strong>Title:</strong> ${email.title}</p>
-          <p><strong>Position:</strong> ${email.position}</p>
-          <p><strong>Email:</strong> ${email.to_email}</p>
-          <p class="text-small text-muted">${DateHelper.daysAgo(email.date)}</p>
-          <span class="badge">${email.status}</span>
+          <h3>${escapeHtml(email.company || '-')}</h3>
+          <p><strong>Title:</strong> ${escapeHtml(email.title || '-')}</p>
+          <p><strong>Position:</strong> ${escapeHtml(email.position || '-')}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email.to_email || '-')}</p>
+          <p class="text-small text-muted">${escapeHtml(email.date || '-')}</p>
+          <span class="badge">${escapeHtml(email.status || 'Sent')}</span>
         </div>
       `;
     });
   }
 
-  const recentContainer = document.getElementById('recentEmails');
-  if (recentContainer) {
-    recentContainer.innerHTML = html;
-  }
+  recentContainer.innerHTML = html;
 }
 
-/* ================================================
-   RENDER CHARTS
-   ================================================ */
-
 function renderCharts() {
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js is not loaded');
+    return;
+  }
+
   renderCompanyChart();
   renderDateChart();
 }
 
 function renderCompanyChart() {
+  const canvas = document.getElementById('companyChart');
+  if (!canvas) return;
+
+  if (companyChartInstance) {
+    companyChartInstance.destroy();
+    companyChartInstance = null;
+  }
+
   const companyCounts = {};
   emails.forEach(e => {
-    companyCounts[e.company] = (companyCounts[e.company] || 0) + 1;
+    const company = e.company || 'Unknown';
+    companyCounts[company] = (companyCounts[company] || 0) + 1;
   });
 
   const sortedCompanies = Object.entries(companyCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
-  const ctx = document.getElementById('companyChart');
-  if (!ctx) return;
+  if (!sortedCompanies.length) return;
 
-  new Chart(ctx, {
+  companyChartInstance = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: sortedCompanies.map(([name]) => name),
       datasets: [{
         label: 'Emails Sent',
-        data: sortedCompanies.map(([_, count]) => count),
-        backgroundColor: [
-          'rgba(37, 99, 235, 0.8)',
-          'rgba(139, 92, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(6, 182, 212, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(249, 115, 22, 0.8)'
-        ],
+        data: sortedCompanies.map(([, count]) => count),
+        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+        borderColor: 'rgba(37, 99, 235, 1)',
+        borderWidth: 1,
         borderRadius: 8,
         borderSkipped: false
       }]
@@ -1410,15 +1501,23 @@ function renderCompanyChart() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          display: false
-        }
+        legend: { display: false }
       },
       scales: {
+        x: {
+          ticks: {
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6b7280'
+          },
+          grid: { display: false }
+        },
         y: {
           beginAtZero: true,
           ticks: {
-            stepSize: 1
+            stepSize: 1,
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6b7280'
+          },
+          grid: {
+            color: 'rgba(148, 163, 184, 0.15)'
           }
         }
       }
@@ -1427,33 +1526,43 @@ function renderCompanyChart() {
 }
 
 function renderDateChart() {
+  const canvas = document.getElementById('dateChart');
+  if (!canvas) return;
+
+  if (dateChartInstance) {
+    dateChartInstance.destroy();
+    dateChartInstance = null;
+  }
+
   const dateCounts = {};
-  
+
   emails.forEach(e => {
-    const date = e.date.split(' ')[0];
-    dateCounts[date] = (dateCounts[date] || 0) + 1;
+    const dateKey = formatDateKey(e.date);
+    if (dateKey) {
+      dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+    }
   });
 
-  const sortedDates = Object.entries(dateCounts).sort();
-  const last30Days = sortedDates.slice(-30);
+  const sortedDates = Object.entries(dateCounts)
+    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+    .slice(-30);
 
-  const ctx = document.getElementById('dateChart');
-  if (!ctx) return;
+  if (!sortedDates.length) return;
 
-  new Chart(ctx, {
+  dateChartInstance = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: last30Days.map(([date]) => date),
+      labels: sortedDates.map(([date]) => date),
       datasets: [{
         label: 'Emails Sent',
-        data: last30Days.map(([_, count]) => count),
+        data: sortedDates.map(([, count]) => count),
         borderColor: 'rgba(37, 99, 235, 1)',
-        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-        tension: 0.4,
+        backgroundColor: 'rgba(37, 99, 235, 0.12)',
+        tension: 0.35,
         fill: true,
         pointRadius: 4,
         pointBackgroundColor: 'rgba(37, 99, 235, 1)',
-        pointBorderColor: '#fff',
+        pointBorderColor: '#ffffff',
         pointBorderWidth: 2
       }]
     },
@@ -1463,14 +1572,27 @@ function renderDateChart() {
       plugins: {
         legend: {
           display: true,
-          position: 'top'
+          position: 'top',
+          labels: {
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6b7280'
+          }
         }
       },
       scales: {
+        x: {
+          ticks: {
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6b7280'
+          },
+          grid: { display: false }
+        },
         y: {
           beginAtZero: true,
           ticks: {
-            stepSize: 1
+            stepSize: 1,
+            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6b7280'
+          },
+          grid: {
+            color: 'rgba(148, 163, 184, 0.15)'
           }
         }
       }
@@ -1478,88 +1600,50 @@ function renderDateChart() {
   });
 }
 
-/* ================================================
-   SEARCH FUNCTIONALITY
-   ================================================ */
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.addEventListener('keyup', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = emails.filter(email =>
-        email.company.toLowerCase().includes(query) ||
-        email.position.toLowerCase().includes(query) ||
-        email.title.toLowerCase().includes(query) ||
-        email.to_email.toLowerCase().includes(query)
-      );
-
-      let html = '';
-      if (filtered.length === 0) {
-        html = `
-          <div class="empty-state">
-            <div class="empty-state-icon"><i class="fa fa-search"></i></div>
-            <h3>No results found</h3>
-            <p>Try adjusting your search terms</p>
-          </div>
-        `;
-      } else {
-        filtered.forEach(email => {
-          html += `
-            <div class="email-card">
-              <h3>${email.company}</h3>
-              <p><strong>Title:</strong> ${email.title}</p>
-              <p><strong>Position:</strong> ${email.position}</p>
-              <p><strong>Email:</strong> ${email.to_email}</p>
-              <p class="text-small text-muted">${email.date}</p>
-              <span class="badge">${email.status}</span>
-            </div>
-          `;
-        });
-      }
-
-      const recentContainer = document.getElementById('recentEmails');
-      if (recentContainer) {
-        recentContainer.innerHTML = html;
-      }
-    });
-  }
-});
-
-===== assets\js\send.js =====
+===== FILE: .\assets\js\send.js =====
 /* ================================================
    SEND EMAIL - Popup Management
    ================================================ */
 
 let allTemplates = [];
 
-/* ================================================
-   OPEN SEND POPUP
-   ================================================ */
-
 async function openSendPopup() {
   try {
     const response = await fetch('send_popup.php');
     const html = await response.text();
 
-    let oldModal = document.getElementById('sendModal');
+    const oldModal = document.getElementById('sendModal');
     if (oldModal) oldModal.remove();
 
     document.body.insertAdjacentHTML('beforeend', html);
-    
-    loadCompanies();
+
+    const modal = document.getElementById('sendModal');
+    if (modal) {
+      modal.classList.add('show');
+      document.body.classList.add('modal-open');
+    }
+
+    await loadCompanies();
     setupPopupEvents();
   } catch (error) {
     console.error('Error loading popup:', error);
-    toast.error('Failed to load send popup');
+    if (window.toast) toast.error('Failed to load send popup');
   }
 }
 
-/* ================================================
-   SETUP POPUP EVENTS
-   ================================================ */
-
 function setupPopupEvents() {
+  const modal = document.getElementById('sendModal');
+  if (!modal) return;
+
   const companySelect = document.getElementById('sendCompany');
   const positionSelect = document.getElementById('sendPosition');
   const sendBtn = document.getElementById('sendBtn');
@@ -1581,30 +1665,34 @@ function setupPopupEvents() {
     closeBtn.addEventListener('click', closeSendPopup);
   }
 
-  // Close on backdrop click
-  const modal = document.getElementById('sendModal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeSendPopup();
-    });
-  }
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeSendPopup();
+  });
+
+  document.addEventListener('keydown', handleSendPopupEsc);
 }
 
-/* ================================================
-   CLOSE POPUP
-   ================================================ */
+function handleSendPopupEsc(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('sendModal');
+    if (modal && modal.classList.contains('show')) {
+      closeSendPopup();
+    }
+  }
+}
 
 function closeSendPopup() {
   const modal = document.getElementById('sendModal');
   if (modal) {
     modal.classList.remove('show');
-    setTimeout(() => modal.remove(), 300);
+    document.body.classList.remove('modal-open');
+    document.removeEventListener('keydown', handleSendPopupEsc);
+
+    setTimeout(() => {
+      if (modal.parentNode) modal.remove();
+    }, 200);
   }
 }
-
-/* ================================================
-   LOAD COMPANIES
-   ================================================ */
 
 async function loadCompanies() {
   try {
@@ -1613,90 +1701,93 @@ async function loadCompanies() {
 
     allTemplates = Array.isArray(data) ? data : (data.data || []);
 
-    const companies = [...new Set(allTemplates.map(t => t.company))];
+    const companies = [...new Set(allTemplates.map(t => t.company).filter(Boolean))];
     const select = document.getElementById('sendCompany');
 
     if (!select) return;
 
     select.innerHTML = '<option value="">Select Company</option>';
     companies.forEach(company => {
-      select.innerHTML += `<option value="${company}">${company}</option>`;
+      select.innerHTML += `<option value="${escapeHtml(company)}">${escapeHtml(company)}</option>`;
     });
   } catch (error) {
     console.error('Error loading companies:', error);
-    toast.error('Failed to load companies');
+    if (window.toast) toast.error('Failed to load companies');
   }
 }
 
-/* ================================================
-   LOAD POSITIONS
-   ================================================ */
-
 function loadPositions() {
-  const company = document.getElementById('sendCompany').value;
-  const filtered = allTemplates.filter(t => t.company === company);
-  const select = document.getElementById('sendPosition');
-
-  select.innerHTML = '<option value="">Select Position</option>';
-  filtered.forEach(t => {
-    select.innerHTML += `<option value="${t.position}">${t.position}</option>`;
-  });
-
-  loadPreview();
-}
-
-/* ================================================
-   LOAD TEMPLATE PREVIEW
-   ================================================ */
-
-function loadPreview() {
-  const company = document.getElementById('sendCompany').value;
-  const position = document.getElementById('sendPosition').value;
-  const template = allTemplates.find(t =>
-    t.company === company && t.position === position
-  );
-
-  if (!template) return;
-
+  const companyEl = document.getElementById('sendCompany');
+  const positionEl = document.getElementById('sendPosition');
   const previewSubject = document.getElementById('previewSubject');
   const previewBody = document.getElementById('previewBody');
 
-  if (previewSubject) previewSubject.innerHTML = template.subject || 'No subject';
-  if (previewBody) previewBody.innerHTML = template.body || 'No body';
+  if (!companyEl || !positionEl) return;
+
+  const company = companyEl.value;
+  const filtered = allTemplates.filter(t => t.company === company);
+
+  positionEl.innerHTML = '<option value="">Select Position</option>';
+  filtered.forEach(t => {
+    positionEl.innerHTML += `<option value="${escapeHtml(t.position)}">${escapeHtml(t.position)}</option>`;
+  });
+
+  if (previewSubject) previewSubject.textContent = 'Select a position to preview subject';
+  if (previewBody) previewBody.innerHTML = '<p>Select a position to preview email body.</p>';
 }
 
-/* ================================================
-   SEND EMAIL
-   ================================================ */
+function loadPreview() {
+  const companyEl = document.getElementById('sendCompany');
+  const positionEl = document.getElementById('sendPosition');
+  const previewSubject = document.getElementById('previewSubject');
+  const previewBody = document.getElementById('previewBody');
 
-async function sendEmail() {
-  const toEmail = document.getElementById('toEmail').value;
-  const company = document.getElementById('sendCompany').value;
-  const position = document.getElementById('sendPosition').value;
+  if (!companyEl || !positionEl || !previewSubject || !previewBody) return;
 
-  // Validation
-  if (!toEmail || !company || !position) {
-    toast.error('Please fill all fields');
-    return;
-  }
+  const company = companyEl.value;
+  const position = positionEl.value;
 
-  if (!FormValidator.email(toEmail)) {
-    toast.error('Please enter a valid email address');
-    return;
-  }
-
-  // Get template
-  const template = allTemplates.find(t =>
-    t.company === company && t.position === position
-  );
+  const template = allTemplates.find(t => t.company === company && t.position === position);
 
   if (!template) {
-    toast.error('Template not found');
+    previewSubject.textContent = 'No subject';
+    previewBody.innerHTML = '<p>No preview available.</p>';
     return;
   }
 
-  // Show loading state
+  previewSubject.textContent = template.subject || 'No subject';
+  previewBody.innerHTML = template.body || '<p>No body</p>';
+}
+
+async function sendEmail() {
+  const toEmailEl = document.getElementById('toEmail');
+  const companyEl = document.getElementById('sendCompany');
+  const positionEl = document.getElementById('sendPosition');
   const sendBtn = document.getElementById('sendBtn');
+
+  if (!toEmailEl || !companyEl || !positionEl || !sendBtn) return;
+
+  const toEmail = toEmailEl.value.trim();
+  const company = companyEl.value;
+  const position = positionEl.value;
+
+  if (!toEmail || !company || !position) {
+    if (window.toast) toast.error('Please fill all fields');
+    return;
+  }
+
+  if (window.FormValidator && !FormValidator.email(toEmail)) {
+    if (window.toast) toast.error('Please enter a valid email address');
+    return;
+  }
+
+  const template = allTemplates.find(t => t.company === company && t.position === position);
+
+  if (!template) {
+    if (window.toast) toast.error('Template not found');
+    return;
+  }
+
   const originalText = sendBtn.innerHTML;
   sendBtn.disabled = true;
   sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
@@ -1705,35 +1796,43 @@ async function sendEmail() {
     const formData = new FormData();
     formData.append('to_email', toEmail);
     formData.append('company', company);
-    formData.append('title', template.title);
+    formData.append('title', template.title || '');
     formData.append('position', position);
-    formData.append('subject', template.subject);
+    formData.append('subject', template.subject || '');
 
-    const response = await fetch('api/save_sent_email.php', {
+    await fetch('api/save_sent_email.php', {
       method: 'POST',
       body: formData
     });
 
-    const data = await response.text();
-
-    // Open Outlook
-    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(template.subject)}&body=${encodeURIComponent(template.body)}`;
+    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(template.subject || '')}&body=${encodeURIComponent(stripHtml(template.body || ''))}`;
     window.open(url, '_blank');
 
-    toast.success('Email saved and Outlook opened!');
+    if (window.toast) toast.success('Email saved and Outlook opened!');
     closeSendPopup();
   } catch (error) {
     console.error('Error sending email:', error);
-    toast.error('Failed to send email');
+    if (window.toast) toast.error('Failed to send email');
   } finally {
     sendBtn.disabled = false;
     sendBtn.innerHTML = originalText;
   }
 }
 
-/* ================================================
-   SETUP SEND BUTTON
-   ================================================ */
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const sendBtn = document.getElementById('sendEmailBtn');
@@ -1742,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-===== assets\js\sent_emails.js =====
+===== FILE: .\assets\js\sent_emails.js =====
 /* ================================================
    SENT EMAILS PAGE
    ================================================ */
@@ -1772,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    LOAD COMPANIES FILTER
    ================================================ */
 
-function loadCompanies() {
+/*function loadCompanies() {
   const companies = [...new Set(allEmails.map(e => e.company))];
   const select = document.getElementById('companyFilter');
 
@@ -1783,6 +1882,7 @@ function loadCompanies() {
     select.innerHTML += `<option value="${company}">${company}</option>`;
   });
 }
+  */
 
 /* ================================================
    RENDER EMAILS
@@ -1928,7 +2028,7 @@ function exportToCSV() {
   toast.success('Emails exported successfully!');
 }
 
-===== assets\js\templates.js =====
+===== FILE: .\assets\js\templates.js =====
 /* ================================================
    TEMPLATES PAGE
    ================================================ */
@@ -2394,106 +2494,143 @@ function setupSearch() {
 
 }
 
-===== assets\js\utils.js =====
+===== FILE: .\assets\js\utils.js =====
 /* ================================================
    UTILITIES.JS
    COMPLETE FIXED + MODERN VERSION
-   ================================================ */
+   ================================================= */
+
+/* ================================================
+   SAFE APP STATE
+   ================================================= */
+
+window.AppState = window.AppState || {
+  theme: 'light'
+};
+
+/* ================================================
+   HELPERS
+   ================================================= */
+
+function escapeHtml(value) {
+  const div = document.createElement('div');
+  div.textContent = value == null ? '' : String(value);
+  return div.innerHTML;
+}
+
+function parseAppDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+
+  const match = dateStr.trim().match(
+    /^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?$/i
+  );
+
+  if (!match) {
+    const fallback = new Date(dateStr);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  let [, dd, mm, yyyy, hh = '0', min = '0', meridiem = ''] = match;
+
+  dd = Number(dd);
+  mm = Number(mm);
+  yyyy = Number(yyyy);
+  hh = Number(hh);
+  min = Number(min);
+
+  if (meridiem) {
+    const upper = meridiem.toUpperCase();
+    if (upper === 'PM' && hh < 12) hh += 12;
+    if (upper === 'AM' && hh === 12) hh = 0;
+  }
+
+  const date = new Date(yyyy, mm - 1, dd, hh, min, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 /* ================================================
    TOAST NOTIFICATIONS
-   ================================================ */
+   ================================================= */
 
 class Toast {
-
   constructor() {
-
-    this.container = this.createContainer();
-
+    this.container = null;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        this.container = this.createContainer();
+      });
+    } else {
+      this.container = this.createContainer();
+    }
   }
 
   createContainer() {
-
-    let container =
-      document.getElementById('toastContainer');
+    let container = document.getElementById('toastContainer');
 
     if (!container) {
-
       container = document.createElement('div');
-
       container.id = 'toastContainer';
-
       container.className = 'toast-container';
-
       document.body.appendChild(container);
-
     }
 
     return container;
+  }
 
+  ensureContainer() {
+    if (!this.container || !document.body.contains(this.container)) {
+      this.container = this.createContainer();
+    }
+    return this.container;
   }
 
   show(message, type = 'info', duration = 3000) {
+    const container = this.ensureContainer();
 
     const toast = document.createElement('div');
-
     toast.className = `toast ${type}`;
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
 
     toast.innerHTML = `
-      <div class="toast-inner">
-
-        <div class="toast-message">
-          ${message}
-        </div>
-
-        <button class="toast-close">
-          &times;
-        </button>
-
+      <div class="toast-inner" style="display:flex;align-items:flex-start;gap:12px;width:100%;">
+        <div class="toast-message" style="flex:1;">${escapeHtml(message)}</div>
+        <button class="toast-close" type="button" aria-label="Close notification">&times;</button>
       </div>
     `;
 
-    this.container.appendChild(toast);
+    container.appendChild(toast);
 
     requestAnimationFrame(() => {
       toast.classList.add('show');
     });
 
-    const closeBtn =
-      toast.querySelector('.toast-close');
-
-    closeBtn.addEventListener('click', () => {
-      this.remove(toast);
-    });
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.remove(toast);
+      });
+    }
 
     if (duration > 0) {
-
       setTimeout(() => {
-
         this.remove(toast);
-
       }, duration);
-
     }
 
     return toast;
-
   }
 
   remove(toast) {
-
     if (!toast) return;
 
     toast.classList.remove('show');
 
     setTimeout(() => {
-
       if (toast.parentNode) {
         toast.remove();
       }
-
     }, 300);
-
   }
 
   success(message, duration = 3000) {
@@ -2511,854 +2648,575 @@ class Toast {
   info(message, duration = 3000) {
     return this.show(message, 'info', duration);
   }
-
 }
 
 window.toast = new Toast();
 
 /* ================================================
    THEME MANAGER
-   ================================================ */
+   ================================================= */
 
 class ThemeManager {
-
-  constructor() {
-
-    this.theme =
-      localStorage.getItem('theme') || 'light';
-
-    this.init();
-
-  }
+ constructor() {
+  this.theme = localStorage.getItem('theme') || window.AppState?.theme || 'light';
+  this.handleToggle = this.handleToggle.bind(this);
+  this.bound = false;
+  this.init();
+}
 
   init() {
-
     this.apply(this.theme);
 
-    window.addEventListener('DOMContentLoaded', () => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setupToggle(), { once: true });
+    } else {
       this.setupToggle();
-    });
-
+    }
   }
 
   apply(theme) {
+  this.theme = theme === 'dark' ? 'dark' : 'light';
+  window.AppState.theme = this.theme;
+  localStorage.setItem('theme', this.theme);
 
-    if (theme === 'dark') {
-
-      document.documentElement
-        .setAttribute('data-theme', 'dark');
-
-    } else {
-
-      document.documentElement
-        .removeAttribute('data-theme');
-
-    }
-
-    localStorage.setItem('theme', theme);
-
-    this.theme = theme;
-
-    this.updateToggleIcon();
-
+  if (this.theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
   }
 
-  toggle() {
+  this.updateToggleIcon();
+}
 
-    this.apply(
-      this.theme === 'dark'
-        ? 'light'
-        : 'dark'
-    );
-
+  handleToggle(e) {
+    if (e) e.preventDefault();
+    this.apply(this.theme === 'dark' ? 'light' : 'dark');
   }
 
   setupToggle() {
+    const toggle = document.getElementById('themeToggle');
 
-    const toggle =
-      document.getElementById('themeToggle');
+    if (!toggle) {
+      console.warn('themeToggle button not found on this page');
+      return;
+    }
 
-    if (!toggle) return;
-
-    toggle.addEventListener('click', () => {
-
-      this.toggle();
-
-    });
-
+    toggle.removeEventListener('click', this.handleToggle);
+    toggle.addEventListener('click', this.handleToggle);
+    this.bound = true;
     this.updateToggleIcon();
-
   }
 
   updateToggleIcon() {
-
-    const toggle =
-      document.getElementById('themeToggle');
-
+    const toggle = document.getElementById('themeToggle');
     if (!toggle) return;
 
-    toggle.innerHTML =
-      this.theme === 'dark'
-        ? '<i class="fa fa-sun"></i>'
-        : '<i class="fa fa-moon"></i>';
-
+    if (this.theme === 'dark') {
+      toggle.innerHTML = '<i class="fa fa-sun"></i>';
+      toggle.setAttribute('aria-label', 'Switch to light mode');
+      toggle.setAttribute('title', 'Switch to light mode');
+    } else {
+      toggle.innerHTML = '<i class="fa fa-moon"></i>';
+      toggle.setAttribute('aria-label', 'Switch to dark mode');
+      toggle.setAttribute('title', 'Switch to dark mode');
+    }
   }
-
 }
 
 window.themeManager = new ThemeManager();
 
 /* ================================================
    FORM VALIDATOR
-   ================================================ */
+   ================================================= */
 
 class FormValidator {
-
   static email(email) {
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      .test(email);
-
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
   }
 
   static required(value) {
-
-    return value &&
-      value.toString().trim() !== '';
-
+    return value !== null && value !== undefined && String(value).trim() !== '';
   }
 
   static minLength(value, min) {
-
-    return value &&
-      value.length >= min;
-
+    return this.required(value) && String(value).length >= min;
   }
 
   static validate(form) {
-
     const errors = {};
-
     if (!form) return errors;
 
-    const fields =
-      form.querySelectorAll('[required]');
+    const fields = form.querySelectorAll('[required]');
 
     fields.forEach(field => {
-
-      const name =
-        field.name || field.id;
+      const name = field.name || field.id || 'Field';
 
       if (!this.required(field.value)) {
-
-        errors[name] =
-          `${name} is required`;
-
+        errors[name] = `${name} is required`;
       }
 
-      if (
-        field.type === 'email' &&
-        field.value &&
-        !this.email(field.value)
-      ) {
-
-        errors[name] =
-          'Invalid email address';
-
+      if (field.type === 'email' && field.value && !this.email(field.value)) {
+        errors[name] = 'Invalid email address';
       }
-
     });
 
     return errors;
-
   }
 
   static showErrors(errors, form) {
-
     this.clearErrors(form);
 
     Object.keys(errors).forEach(key => {
-
       const field =
         form.querySelector(`[name="${key}"]`) ||
-        form.querySelector(`#${key}`);
+        form.querySelector(`#${CSS.escape(key)}`);
 
       if (!field) return;
 
-      field.style.borderColor =
-        'var(--danger)';
-
+      field.style.borderColor = 'var(--danger)';
       field.title = errors[key];
-
     });
-
   }
 
   static clearErrors(form) {
-
     if (!form) return;
 
-    const fields =
-      form.querySelectorAll(
-        'input, textarea, select'
-      );
+    const fields = form.querySelectorAll('input, textarea, select');
 
     fields.forEach(field => {
-
       field.style.borderColor = '';
-
       field.title = '';
-
     });
-
   }
-
 }
 
 window.FormValidator = FormValidator;
 
 /* ================================================
    API HELPER
-   ================================================ */
+   ================================================= */
 
 class API {
-
   static async fetch(url, options = {}) {
-
     try {
-
       const response = await fetch(url, options);
 
       if (!response.ok) {
-
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const contentType =
-        response.headers.get('content-type');
+      const contentType = response.headers.get('content-type') || '';
 
-      if (
-        contentType &&
-        contentType.includes('application/json')
-      ) {
-
+      if (contentType.includes('application/json')) {
         return await response.json();
-
       }
 
       return await response.text();
-
     } catch (error) {
-
-      console.error(error);
-
+      console.error('API.fetch error:', error);
       throw error;
-
     }
-
   }
 
   static async post(url, data = {}) {
-
     const formData = new FormData();
 
     Object.keys(data).forEach(key => {
-
       formData.append(key, data[key]);
-
     });
 
     try {
-
       const response = await fetch(url, {
         method: 'POST',
         body: formData
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+
+      if (contentType.includes('application/json')) {
+        return await response.json();
+      }
+
       return await response.text();
-
     } catch (error) {
-
-      console.error(error);
-
+      console.error('API.post error:', error);
       throw error;
-
     }
-
   }
 
   static sanitize(text) {
-
-    const div =
-      document.createElement('div');
-
-    div.textContent = text;
-
-    return div.innerHTML;
-
+    return escapeHtml(text);
   }
-
 }
 
 window.API = API;
 
 /* ================================================
    DOM HELPER
-   ================================================ */
+   ================================================= */
 
 class DOM {
-
   static query(selector, parent = document) {
-
     return parent.querySelector(selector);
-
   }
 
   static queryAll(selector, parent = document) {
-
-    return parent.querySelectorAll(selector);
-
+    return Array.from(parent.querySelectorAll(selector));
   }
 
   static create(tag, options = {}) {
+    const el = document.createElement(tag);
 
-    const el =
-      document.createElement(tag);
+    if (options.class) el.className = options.class;
+    if (options.id) el.id = options.id;
+    if (options.text) el.textContent = options.text;
+    if (options.html) el.innerHTML = options.html;
 
-    if (options.class) {
-      el.className = options.class;
-    }
-
-    if (options.id) {
-      el.id = options.id;
-    }
-
-    if (options.text) {
-      el.textContent = options.text;
-    }
-
-    if (options.html) {
-      el.innerHTML = options.html;
+    if (options.attrs && typeof options.attrs === 'object') {
+      Object.entries(options.attrs).forEach(([key, value]) => {
+        el.setAttribute(key, value);
+      });
     }
 
     return el;
+  }
 
+  static resolve(el) {
+    return typeof el === 'string' ? this.query(el) : el;
   }
 
   static remove(el) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
-    if (element) {
-      element.remove();
-    }
-
+    const element = this.resolve(el);
+    if (element) element.remove();
   }
 
   static show(el) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
+    const element = this.resolve(el);
     if (!element) return;
-
     element.classList.remove('hidden');
-
   }
 
   static hide(el) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
+    const element = this.resolve(el);
     if (!element) return;
-
     element.classList.add('hidden');
-
   }
 
   static addClass(el, className) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
-    if (element) {
-      element.classList.add(className);
-    }
-
+    const element = this.resolve(el);
+    if (element) element.classList.add(className);
   }
 
   static removeClass(el, className) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
-    if (element) {
-      element.classList.remove(className);
-    }
-
+    const element = this.resolve(el);
+    if (element) element.classList.remove(className);
   }
 
   static toggleClass(el, className) {
-
-    const element =
-      typeof el === 'string'
-        ? this.query(el)
-        : el;
-
-    if (element) {
-      element.classList.toggle(className);
-    }
-
+    const element = this.resolve(el);
+    if (element) element.classList.toggle(className);
   }
-
 }
 
 window.DOM = DOM;
 
 /* ================================================
    SIDEBAR MANAGER
-   ================================================ */
+   ================================================= */
 
 class SidebarManager {
-
   constructor() {
+    this.sidebar = null;
+    this.toggleBtn = null;
+    this.layout = null;
+    this.boundOutsideClick = this.handleOutsideClick.bind(this);
+    this.boundToggleClick = this.handleToggleClick.bind(this);
 
-    window.addEventListener(
-      'DOMContentLoaded',
-      () => {
-
-        this.sidebar =
-          document.querySelector('.sidebar');
-
-        this.toggle =
-          document.querySelector('.sidebar-toggle');
-
-        this.layout =
-          document.querySelector('.main-layout');
-
-        this.init();
-
-      }
-    );
-
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init(), { once: true });
+    } else {
+      this.init();
+    }
   }
 
   init() {
+    this.sidebar = document.querySelector('.sidebar');
+    this.toggleBtn = document.querySelector('.sidebar-toggle');
+    this.layout = document.querySelector('.main-layout');
 
-    if (!this.toggle) return;
+    if (!this.toggleBtn) return;
 
-    this.toggle.addEventListener('click', e => {
+    this.toggleBtn.removeEventListener('click', this.boundToggleClick);
+    this.toggleBtn.addEventListener('click', this.boundToggleClick);
 
-      e.stopPropagation();
+    document.removeEventListener('click', this.boundOutsideClick);
+    document.addEventListener('click', this.boundOutsideClick);
+  }
 
-      this.toggleSidebar();
-
-    });
-
-    document.addEventListener('click', e => {
-
-      this.handleOutsideClick(e);
-
-    });
-
+  handleToggleClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.toggleSidebar();
   }
 
   toggleSidebar() {
-
-    if (this.sidebar) {
-
-      this.sidebar.classList.toggle('open');
-
-    }
-
-    if (this.layout) {
-
-      this.layout.classList.toggle('sidebar-open');
-
-    }
-
+    if (this.sidebar) this.sidebar.classList.toggle('open');
+    if (this.layout) this.layout.classList.toggle('sidebar-open');
   }
 
   handleOutsideClick(e) {
-
-    if (!this.sidebar || !this.toggle) return;
+    if (!this.sidebar || !this.toggleBtn) return;
 
     const clickedInside =
-      this.sidebar.contains(e.target) ||
-      this.toggle.contains(e.target);
+      this.sidebar.contains(e.target) || this.toggleBtn.contains(e.target);
 
     if (!clickedInside) {
-
       this.closeSidebar();
-
     }
-
   }
 
   closeSidebar() {
-
-    if (this.sidebar) {
-
-      this.sidebar.classList.remove('open');
-
-    }
-
-    if (this.layout) {
-
-      this.layout.classList.remove('sidebar-open');
-
-    }
-
+    if (this.sidebar) this.sidebar.classList.remove('open');
+    if (this.layout) this.layout.classList.remove('sidebar-open');
   }
-
 }
 
-window.sidebarManager =
-  new SidebarManager();
+window.sidebarManager = new SidebarManager();
 
 /* ================================================
    MODAL MANAGER
-   ================================================ */
+   ================================================= */
 
 class ModalManager {
+  static lockScroll() {
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  static unlockScrollIfNeeded() {
+    const hasOpenModal = document.querySelector('.modal.show');
+    if (!hasOpenModal) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+    }
+  }
 
   static open(modalId) {
-
-    const modal =
-      document.getElementById(modalId);
+    const modal = document.getElementById(modalId);
 
     if (!modal) {
-
-      console.error(
-        `Modal not found: ${modalId}`
-      );
-
+      console.error(`Modal not found: ${modalId}`);
       return;
-
     }
 
     modal.classList.add('show');
-
-    document.body.style.overflow = 'hidden';
-
+    this.lockScroll();
   }
 
   static close(modalId) {
-
-    const modal =
-      document.getElementById(modalId);
-
+    const modal = document.getElementById(modalId);
     if (!modal) return;
 
     modal.classList.remove('show');
+    this.unlockScrollIfNeeded();
+  }
 
-    document.body.style.overflow = '';
-
+  static closeElement(modal) {
+    if (!modal) return;
+    modal.classList.remove('show');
+    this.unlockScrollIfNeeded();
   }
 
   static closeAll() {
+    document.querySelectorAll('.modal.show').forEach(modal => {
+      modal.classList.remove('show');
+    });
 
-    document
-      .querySelectorAll('.modal')
-      .forEach(modal => {
-
-        modal.classList.remove('show');
-
-      });
-
-    document.body.style.overflow = '';
-
+    this.unlockScrollIfNeeded();
   }
 
   static setupCloseButtons() {
+    document.querySelectorAll('.modal .close').forEach(btn => {
+      btn.removeEventListener('click', btn.__modalCloseHandler);
 
-    document
-      .querySelectorAll('.modal .close')
-      .forEach(btn => {
+      btn.__modalCloseHandler = () => {
+        const modal = btn.closest('.modal');
+        this.closeElement(modal);
+      };
 
-        btn.addEventListener('click', () => {
-
-          const modal =
-            btn.closest('.modal');
-
-          if (modal) {
-
-            modal.classList.remove('show');
-
-          }
-
-          document.body.style.overflow = '';
-
-        });
-
-      });
-
+      btn.addEventListener('click', btn.__modalCloseHandler);
+    });
   }
 
   static setupBackdropClose() {
+    document.removeEventListener('click', this.__backdropHandler);
 
-    document.addEventListener('click', e => {
-
-      if (
-        e.target.classList.contains('modal')
-      ) {
-
-        e.target.classList.remove('show');
-
-        document.body.style.overflow = '';
-
+    this.__backdropHandler = e => {
+      if (e.target.classList && e.target.classList.contains('modal')) {
+        this.closeElement(e.target);
       }
+    };
 
-    });
-
+    document.addEventListener('click', this.__backdropHandler);
   }
-
 }
 
 window.ModalManager = ModalManager;
 
 /* ================================================
    DATE HELPER
-   ================================================ */
+   ================================================= */
 
 class DateHelper {
+  static parse(date) {
+    return parseAppDate(date);
+  }
 
   static format(date) {
+    const parsed = date instanceof Date ? date : this.parse(date);
+    if (!parsed) return '';
 
-    if (typeof date === 'string') {
-
-      date = new Date(date);
-
-    }
-
-    const d =
-      String(date.getDate()).padStart(2, '0');
-
-    const m =
-      String(date.getMonth() + 1)
-      .padStart(2, '0');
-
-    const y = date.getFullYear();
+    const d = String(parsed.getDate()).padStart(2, '0');
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const y = parsed.getFullYear();
 
     return `${d}-${m}-${y}`;
-
   }
 
   static isToday(dateStr) {
-
-    const today =
-      new Date().toDateString();
-
-    const date =
-      new Date(dateStr).toDateString();
-
-    return today === date;
-
-  }
-
-  static daysAgo(dateStr) {
+    const date = this.parse(dateStr);
+    if (!date) return false;
 
     const now = new Date();
 
-    const date = new Date(dateStr);
-
-    const diff =
-      Math.floor(
-        (now - date) /
-        (1000 * 60 * 60 * 24)
-      );
-
-    if (diff === 0) {
-      return 'Today';
-    }
-
-    if (diff === 1) {
-      return 'Yesterday';
-    }
-
-    if (diff < 7) {
-      return `${diff} days ago`;
-    }
-
-    return this.format(date);
-
+    return (
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear()
+    );
   }
 
+  static daysAgo(dateStr) {
+    const date = this.parse(dateStr);
+    if (!date) return '';
+
+    const now = new Date();
+    const startNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diff = Math.floor((startNow - startDate) / (1000 * 60 * 60 * 24));
+
+    if (diff <= 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7) return `${diff} days ago`;
+
+    return this.format(date);
+  }
 }
 
 window.DateHelper = DateHelper;
 
 /* ================================================
    STORAGE
-   ================================================ */
+   ================================================= */
+
+/* ================================================
+   STORAGE
+   ================================================= */
 
 class Storage {
+  static memory = {};
+
+  static isLocalStorageAvailable() {
+    try {
+      const testKey = '__app_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
   static set(key, value) {
+    this.memory[key] = value;
 
-    try {
-
-      localStorage.setItem(
-        key,
-        JSON.stringify(value)
-      );
-
-    } catch (error) {
-
-      console.error(error);
-
+    if (this.isLocalStorageAvailable()) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        console.warn('Storage.set localStorage failed:', error);
+      }
     }
-
   }
 
   static get(key) {
-
-    try {
-
-      const item =
-        localStorage.getItem(key);
-
-      return item
-        ? JSON.parse(item)
-        : null;
-
-    } catch (error) {
-
-      console.error(error);
-
-      return null;
-
+    if (this.isLocalStorageAvailable()) {
+      try {
+        const item = localStorage.getItem(key);
+        if (item !== null) {
+          return JSON.parse(item);
+        }
+      } catch (error) {
+        console.warn('Storage.get localStorage failed:', error);
+      }
     }
 
+    return Object.prototype.hasOwnProperty.call(this.memory, key)
+      ? this.memory[key]
+      : null;
   }
 
   static remove(key) {
+    delete this.memory[key];
 
-    localStorage.removeItem(key);
-
+    if (this.isLocalStorageAvailable()) {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        console.warn('Storage.remove localStorage failed:', error);
+      }
+    }
   }
 
   static clear() {
+    this.memory = {};
 
-    localStorage.clear();
-
+    if (this.isLocalStorageAvailable()) {
+      try {
+        localStorage.clear();
+      } catch (error) {
+        console.warn('Storage.clear localStorage failed:', error);
+      }
+    }
   }
-
 }
 
 window.Storage = Storage;
 
 /* ================================================
    ESC CLOSE
-   ================================================ */
+   ================================================= */
 
 document.addEventListener('keydown', e => {
-
   if (e.key === 'Escape') {
-
     ModalManager.closeAll();
-
   }
-
 });
 
 /* ================================================
    GLOBAL INIT
-   ================================================ */
+   ================================================= */
 
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
+document.addEventListener('DOMContentLoaded', () => {
+  ModalManager.setupCloseButtons();
+  ModalManager.setupBackdropClose();
+});
 
-    ModalManager.setupCloseButtons();
-
-    ModalManager.setupBackdropClose();
-
-  }
-);
-
-===== includes\footer.php =====
-  </div> <!-- end main-layout -->
-</body>
-</html>
-
-===== includes\header.php =====
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="Modern Email CRM Dashboard">
-	<title>Email CRM Dashboard</title>
-	<link rel="stylesheet" href="assets/css/modern.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-	<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-	<script src="assets/js/utils.js"></script>
-</head>
-<body>
-<div class="main-layout">
-<button class="sidebar-toggle" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
-
-===== includes\sidebar.php =====
-<div class="sidebar">
-	<div class="logo">
-		<h2><i class="fa fa-envelope"></i> Email CRM</h2>
-	</div>
-	<ul class="menu">
-		<li><a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF'])=='dashboard.php'?'active':'' ?>" title="Dashboard"><i class="fa fa-chart-bar"></i> <span>Dashboard</span></a></li>
-		<li><a href="templates.php" class="<?= basename($_SERVER['PHP_SELF'])=='templates.php'?'active':'' ?>" title="Templates"><i class="fa fa-file-alt"></i> <span>Templates</span></a></li>
-		<li><a href="sent_emails.php" class="<?= basename($_SERVER['PHP_SELF'])=='sent_emails.php'?'active':'' ?>" title="Sent Emails"><i class="fa fa-paper-plane"></i> <span>Sent Emails</span></a></li>
-	</ul>
-</div>
-
-===== includes\topbar.php =====
-<div class="topbar">
-
-    <h2><?php echo $pageTitle; ?></h2>
-
-    <div class="topbar-actions">
-
-        <button
-        type="button"
-        class="icon-btn"
-        id="themeToggle"
-        aria-label="Toggle dark mode"
-        title="Toggle dark mode">
-            <i class="fa fa-moon"></i>
-        </button>
-
-        <button
-        type="button"
-        class="btn primary-btn"
-        id="sendEmailBtn"
-        aria-label="Send new email">
-
-            <i class="fa fa-envelope"></i>
-            Send Email
-
-        </button>
-
-    </div>
-
-</div>
-
-===== dashboard.php =====
+===== FILE: .\dashboard.php =====
 <?php
 $pageTitle = "Dashboard";
 include 'includes/header.php';
@@ -3414,7 +3272,169 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/footer.php'; ?>
 
-===== send_popup.php =====
+===== FILE: .\data\sent_emails.json =====
+[
+    {
+        "to_email": "test@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "24-05-2026 10:30 PM"
+    },
+    {
+        "to_email": "royalchamp.rc@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "23-05-2026 09:21 AM"
+    },
+    {
+        "to_email": "bibihajera360@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "23-05-2026 09:23 AM"
+    },
+    {
+        "to_email": "bibihajera360@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "23-05-2026 09:39 AM"
+    },
+    {
+        "to_email": "bibihajera360@gmail.com",
+        "title": "Backend Hiring",
+        "company": "Microsoft",
+        "position": "PHP Developer",
+        "subject": "Job Opportunity",
+        "status": "Sent",
+        "date": "23-05-2026 02:55 PM"
+    },
+    {
+        "to_email": "bibihajera360@gmail.com",
+        "title": "Backend Hiring",
+        "company": "Microsoft",
+        "position": "PHP Developer",
+        "subject": "Job Opportunity",
+        "status": "Sent",
+        "date": "23-05-2026 02:55 PM"
+    },
+    {
+        "to_email": "sahuprathit@gmail.com",
+        "title": "Backend Hiring",
+        "company": "Microsoft",
+        "position": "PHP Developer",
+        "subject": "Job Opportunity",
+        "status": "Sent",
+        "date": "23-05-2026 02:59 PM"
+    },
+    {
+        "to_email": "adsda@gmail.com",
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "status": "Sent",
+        "date": "24-05-2026 23:17 PM"
+    }
+]
+
+===== FILE: .\data\templates.json =====
+[
+    {
+        "title": "Frontend Hiring",
+        "company": "Google",
+        "position": "Frontend Developer",
+        "subject": "Interview Invitation",
+        "body": "Dear Candidate,\n\nWe would like to invite you for interview.\n\nRegards,\nHR Team",
+        "date": "24-05-2026 10:00 PM"
+    },
+    {
+        "title": "Backend Hiring",
+        "company": "Microsoft",
+        "position": "PHP Developer",
+        "subject": "Job Opportunity",
+        "body": "Dear Candidate,\n\nYour profile shortlisted.\n\nRegards,\nHR Team",
+        "date": "24-05-2026 10:10 PM"
+    }
+]
+
+===== FILE: .\includes\footer.php =====
+  </div> <!-- end main-layout -->
+</body>
+</html>
+
+===== FILE: .\includes\header.php =====
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Modern Email CRM Dashboard">
+	<title>Email CRM Dashboard</title>
+	<link rel="stylesheet" href="assets/css/modern.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+	<script src="assets/js/utils.js"></script>
+</head>
+<body>
+<div class="main-layout">
+<button class="sidebar-toggle" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
+
+===== FILE: .\includes\sidebar.php =====
+<div class="sidebar">
+	<div class="logo">
+		<h2><i class="fa fa-envelope"></i> Email CRM</h2>
+	</div>
+	<ul class="menu">
+		<li><a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF'])=='dashboard.php'?'active':'' ?>" title="Dashboard"><i class="fa fa-chart-bar"></i> <span>Dashboard</span></a></li>
+		<li><a href="templates.php" class="<?= basename($_SERVER['PHP_SELF'])=='templates.php'?'active':'' ?>" title="Templates"><i class="fa fa-file-alt"></i> <span>Templates</span></a></li>
+		<li><a href="sent_emails.php" class="<?= basename($_SERVER['PHP_SELF'])=='sent_emails.php'?'active':'' ?>" title="Sent Emails"><i class="fa fa-paper-plane"></i> <span>Sent Emails</span></a></li>
+	</ul>
+</div>
+
+===== FILE: .\includes\topbar.php =====
+<div class="topbar">
+
+    <h2><?php echo $pageTitle; ?></h2>
+
+    <div class="topbar-actions">
+
+        <button
+        type="button"
+        class="icon-btn"
+        id="themeToggle"
+        aria-label="Toggle dark mode"
+        title="Toggle dark mode">
+            <i class="fa fa-moon"></i>
+        </button>
+
+        <button
+        type="button"
+        class="btn primary-btn"
+        id="sendEmailBtn"
+        aria-label="Send new email">
+
+            <i class="fa fa-envelope"></i>
+            Send Email
+
+        </button>
+
+    </div>
+
+</div>
+
+===== FILE: .\send_popup.php =====
 <div class="modal show" id="sendModal">
 
     <div class="modal-content send-popup">
@@ -3476,7 +3496,7 @@ include 'includes/sidebar.php';
 
 </div>
 
-===== sent_emails.php =====
+===== FILE: .\sent_emails.php =====
 <?php
 $pageTitle = "Sent Emails";
 include 'includes/header.php';
@@ -3491,7 +3511,7 @@ include 'includes/sidebar.php';
 
     <input type="text" id="emailSearch" placeholder="Search company, position, title...">
 
-    <select id="companyFilter"></select>
+    <!-- <select id="companyFilter"></select> -->
 
     <select id="statusFilter">
         <option value="">All Status</option>
@@ -3513,7 +3533,7 @@ include 'includes/sidebar.php';
 
 <?php include 'includes/footer.php'; ?>
 
-===== templates.php =====
+===== FILE: .\templates.php =====
 <?php
 $pageTitle = "Templates";
 include 'includes/header.php';

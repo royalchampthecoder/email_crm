@@ -160,50 +160,78 @@ async function sendEmail() {
   const position = positionEl.value;
 
   if (!toEmail || !company || !position) {
-    if (window.toast) toast.error('Please fill all fields');
+    toast.error('Please fill all fields');
     return;
   }
 
-  if (window.FormValidator && !FormValidator.email(toEmail)) {
-    if (window.toast) toast.error('Please enter a valid email address');
-    return;
-  }
-
-  const template = allTemplates.find(t => t.company === company && t.position === position);
+  const template = allTemplates.find(
+    t => t.company === company && t.position === position
+  );
 
   if (!template) {
-    if (window.toast) toast.error('Template not found');
+    toast.error('Template not found');
     return;
   }
 
   const originalText = sendBtn.innerHTML;
+
   sendBtn.disabled = true;
-  sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+  sendBtn.innerHTML =
+    '<i class="fa fa-spinner fa-spin"></i> Sending...';
 
   try {
+
     const formData = new FormData();
+
     formData.append('to_email', toEmail);
     formData.append('company', company);
-    formData.append('title', template.title || '');
     formData.append('position', position);
+    formData.append('title', template.title || '');
     formData.append('subject', template.subject || '');
 
-    await fetch('api/save_sent_email.php', {
-      method: 'POST',
-      body: formData
-    });
+    // IMPORTANT
+    formData.append('body', template.body || '');
 
-    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(template.subject || '')}&body=${encodeURIComponent(stripHtml(template.body || ''))}`;
-    window.open(url, '_blank');
+    const response = await fetch(
+      'api/send_email.php',
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
 
-    if (window.toast) toast.success('Email saved and Outlook opened!');
-    closeSendPopup();
+    const result = await response.json();
+
+    if (result.success) {
+
+      await fetch('api/save_sent_email.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      toast.success('Email sent successfully');
+
+      closeSendPopup();
+
+    } else {
+
+      toast.error(
+        result.message || 'Failed to send email'
+      );
+
+    }
+
   } catch (error) {
-    console.error('Error sending email:', error);
-    if (window.toast) toast.error('Failed to send email');
+
+    console.error(error);
+
+    toast.error('Failed to send email');
+
   } finally {
+
     sendBtn.disabled = false;
     sendBtn.innerHTML = originalText;
+
   }
 }
 

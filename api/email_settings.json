@@ -1,0 +1,19 @@
+{
+  "active_provider": "",
+
+  "gmail": {
+    "enabled": false,
+    "email": "",
+    "password": ""
+  },
+
+  "outlook": {
+    "enabled": false,
+    "email": "",
+    "password": ""
+  },
+
+  "deeplink": {
+    "enabled": false
+  }
+}
